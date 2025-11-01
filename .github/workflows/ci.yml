@@ -1,15 +1,29 @@
 name: CI - Lint and Security
 
+# Overview
+# This workflow is optimized for fast feedback (~10s on small diffs) while
+# keeping results easy to read. It splits into 3 focused jobs:
+#  - Python • Ruff: format + lint Python
+#  - Templates • djLint: check Jinja templates
+#  - Security • Bandit & pip-audit: basic SAST and dependency CVEs
+#
+# Key speed techniques used here:
+#  - Only run jobs when relevant files change (paths-filter)
+#  - Use setup-python's built-in pip cache for tool installs
+#  - Keep steps minimal and pinned for reproducibility and cold-start speed
+#  - Continue steps to always produce a readable summary, then fail at the end
+
 on:
   push:
   pull_request:
 
-# Cancel redundant runs on rapid pushes
+# Concurrency ensures only the latest run for a branch/PR is active.
+# This saves CI minutes and keeps signal relevant when pushing quickly.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Principle of least privilege
+# Principle of least privilege - workflows default to broad permissions.
 permissions:
   contents: read
 
@@ -25,8 +39,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        # Checkout is required so tools can read files. v4 is the current
+        # major and is well-cached on GitHub runners.
 
       # Run only when Python files or Ruff config changed
+      # Paths-filter sets outputs we can branch on. If nothing relevant
+      # changed, we skip the expensive steps and summarize as "Skipped".
       - name: Filter paths (Python)
         id: filter
         uses: dorny/paths-filter@v3
@@ -37,13 +55,17 @@ jobs:
               - '.ruff.toml'
 
       # Built-in pip cache for faster installs
+      # The cache reuses downloaded wheels between runs to speed up pip installs.
+      # Sticking to one Python version maximizes cache hit rate.
       - name: Set up Python 3.11 (pip cache)
         if: ${{ steps.filter.outputs.changed == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
-
+          
+      # Pin versions for reproducibility and stable annotations.
+      # Tip: update periodically to pick up new rules/perf.
       - name: Install Ruff (pinned)
         if: ${{ steps.filter.outputs.changed == 'true' }}
         run: pip install "ruff==0.5.7"
@@ -57,6 +79,11 @@ jobs:
           ruff check . --fix
           ruff format .
           ruff check . --output-format=github
+        # Ruff runs twice:
+        #  1) ruff check --fix and ruff format to apply safe auto-fixes.
+        #  2) ruff check (no --fix) to produce GitHub annotations.
+        # continue-on-error keeps the job alive so we can write a clean summary
+        # and fail at the end based on the step outcome.
 
       - name: Summary (Python • Ruff)
         run: |
@@ -66,6 +93,9 @@ jobs:
           s="${{ steps.ruff.outcome }}"
           echo "- Ruff: $s" >> "$GITHUB_STEP_SUMMARY"
           [ "$s" = "failure" ] && exit 1 || exit 0
+        # We intentionally gate the final exit code here instead of failing
+        # earlier. That guarantees a human-friendly section in the job summary
+        # even when lint errors exist.
 
   template-lint:
     name: Templates • djLint
@@ -90,6 +120,8 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
+        # djLint supports multiple templating engines. We use the Jinja profile
+        # to lint Flask/Jinja templates.
       - name: Install djLint (pinned)
         if: ${{ steps.filter.outputs.changed == 'true' }}
         run: pip install "djlint==1.36.4"
@@ -99,6 +131,8 @@ jobs:
         continue-on-error: true
         if: ${{ steps.filter.outputs.changed == 'true' }}
         run: djlint templates --check --profile=jinja
+        # --check makes it fail on style issues (no auto-fix). We keep
+        # continue-on-error to always emit a summary before deciding pass/fail.
 
       - name: Summary (Templates • djLint)
         run: |
@@ -108,6 +142,7 @@ jobs:
           s="${{ steps.djlint.outcome }}"
           echo "- djLint: $s" >> "$GITHUB_STEP_SUMMARY"
           [ "$s" = "failure" ] && exit 1 || exit 0
+        # Same summary pattern: write a clear result and fail only here.
 
   security-audit:
     name: Security • Bandit & pip-audit
@@ -136,6 +171,7 @@ jobs:
       - name: Install security tools (pinned)
         if: ${{ steps.filter.outputs.changed == 'true' }}
         run: pip install "bandit==1.7.8" "pip-audit==2.7.3"
+        # Pin for consistent findings and faster cold starts.
 
       - name: Bandit (SAST)
         id: bandit
@@ -146,12 +182,18 @@ jobs:
             --severity-level medium \
             --confidence-level medium \
             -x venv,.venv,instance,__pycache__
+        # Bandit scans Python code for common security issues.
+        # -q: quiet output    -r: recursive
+        # We set minimum severity/confidence to "medium" to reduce noise.
+        # Exclusions skip virtualenvs, runtime instance data, and caches.
 
       - name: pip-audit (dependency CVEs)
         id: pip_audit
         continue-on-error: true
         if: ${{ steps.filter.outputs.changed == 'true' }}
         run: pip-audit -r requirements.txt
+        # Checks installed requirement versions against known CVEs.
+        # For lockfiles, use the corresponding flag (e.g., -r, -P, etc.).
 
       - name: Summary (Security)
         run: |
@@ -162,3 +204,5 @@ jobs:
           echo "- Bandit: $sb" >> "$GITHUB_STEP_SUMMARY"
           echo "- pip-audit: $sa" >> "$GITHUB_STEP_SUMMARY"
           [ "$sb" = "failure" ] || [ "$sa" = "failure" ] && exit 1 || exit 0
+        # We fail the job if either Bandit or pip-audit found issues serious
+        # enough to set a failure. The summary always shows both results.
