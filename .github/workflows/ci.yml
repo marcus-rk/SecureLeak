@@ -1,17 +1,20 @@
-name: CI
+name: CI - Lint and Security
 
 on:
   push:
   pull_request:
 
 jobs:
-  lint:
+  python-lint:
+    name: Python • Ruff
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache pip
+      # Cache pip's download directory to speed up repeated installs across runs.
+      # Key is based on OS and requirements.txt contents; restore-keys allows partial matches.
+      - name: Cache pip (tool downloads)
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
@@ -19,35 +22,84 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install runtime deps
+      - name: Install Ruff
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install ruff
 
-      - name: Install tooling (linters & security)
-        run: |
-          pip install ruff djlint bandit pip-audit
-
-      # Python style & imports: auto-fix then verify
-      - name: Python lint (ruff)
+      # Auto-fix simple issues, format, then verify no remaining violations.
+      - name: Ruff (auto-fix, then verify)
         run: |
           ruff check . --fix
           ruff format .
           ruff check .
 
-      - name: Jinja/HTML lint (djlint)
+  template-lint:
+    name: Templates • djLint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache pip (tool downloads)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install djLint
+        run: |
+          python -m pip install --upgrade pip
+          pip install djlint
+
+      # Lint Jinja templates verbosely for easier debugging on CI failures.
+      - name: djLint (Jinja profile)
         run: |
           djlint templates --check --profile=jinja
 
-      - name: Python security audit (Bandit)
+  security-audit:
+    name: Security • Bandit & pip-audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache pip (tool downloads)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit pip-audit
+
+      # Static analysis of Python code for common security issues.
+      - name: Bandit (SAST)
         run: |
           bandit -q -r . -x venv,.venv,instance,__pycache__
 
-      - name: Dependency vulnerability audit (pip-audit)
+      # Check dependency manifest(s) for known vulnerabilities (no install required).
+      - name: pip-audit (dependency CVEs)
         run: |
           pip-audit -r requirements.txt
