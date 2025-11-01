@@ -32,7 +32,10 @@ def create_app() -> Flask:
     # CSRFProtect: attaches per-session tokens to all forms to prevent Cross-Site Request Forgery (CSRF) attacks.
     # Talisman: enforces secure HTTP headers (CSP, HSTS, frame and content guards) to mitigate XSS and clickjacking.
     csrf.init_app(app)
-    Talisman(app, content_security_policy={"default-src": "'self'"})
+    Talisman(app,content_security_policy={
+            "default-src": "'self'",
+            "script-src": "'self'",
+        })
 
     from routes.auth import auth_bp
     from routes.reports import reports_bp
