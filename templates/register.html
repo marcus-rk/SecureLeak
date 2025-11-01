@@ -1,3 +1,8 @@
+{#
+    Registration form view.
+    Pulls a CSRF token from Flask, collects user credentials and role, and posts to auth.register.
+    Mirrors login layout so users can switch contexts easily via footer link.
+#}
 {% extends "layout.html" %}
 
 {% block content %}

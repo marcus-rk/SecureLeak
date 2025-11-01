@@ -1,3 +1,8 @@
+{#
+    Login form view.
+    Extends the base layout and expects Flask to provide `csrf_token()` for protection.
+    Successful submission posts back to the auth blueprint for credential handling.
+#}
 {% extends "layout.html" %}
 
 {% block content %}

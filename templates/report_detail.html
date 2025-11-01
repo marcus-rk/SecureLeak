@@ -1,0 +1,26 @@
+{#
+    Individual report detail card.
+    `reports.view_report` passes a single report dict with id, status, severity, and summary fields.
+    Provides a back link to the listing so browsing remains in the reports blueprint.
+#}
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="reports">
+    <h2>{{ report.title }}</h2>
+    <div class="report-detail">
+        <dl>
+            <div>
+                <dt>Status</dt>
+                <dd>{{ report.status|capitalize }}</dd>
+            </div>
+            <div>
+                <dt>Severity</dt>
+                <dd>{{ report.severity|capitalize }}</dd>
+            </div>
+        </dl>
+        <p>{{ report.summary }}</p>
+    </div>
+    <a class="button-link" href="{{ url_for('reports.list_reports') }}">Back to reports</a>
+</section>
+{% endblock %}

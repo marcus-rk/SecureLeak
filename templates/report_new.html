@@ -1,3 +1,8 @@
+{#
+    New report submission form.
+    The reports blueprint renders this template and injects a CSRF token for secure file uploads.
+    Form posts to the same endpoint (`reports.new_report`) to handle create requests.
+#}
 {% extends "layout.html" %}
 
 {% block content %}

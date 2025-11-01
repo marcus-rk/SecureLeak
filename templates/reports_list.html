@@ -1,3 +1,9 @@
+{#
+    Displays the list of demo security reports.
+    Each row delegates to `reports.list_reports`, which injects SAMPLE_REPORTS.
+    Cells link to `reports.view_report` so clicking navigates to the detail view.
+#}
+
 {% extends "layout.html" %}
 
 {% block content %}
@@ -14,9 +20,10 @@
         <tbody>
             {% for report in reports %}
             <tr>
-                <td>{{ report.title }}</td>
-                <td>{{ report.status }}</td>
-                <td>{{ report.severity }}</td>
+                {% set detail_url = url_for('reports.view_report', report_id=report.id) %}
+                <td><a class="table-link" href="{{ detail_url }}">{{ report.title }}</a></td>
+                <td><a class="table-link" href="{{ detail_url }}">{{ report.status }}</a></td>
+                <td><a class="table-link" href="{{ detail_url }}">{{ report.severity }}</a></td>
             </tr>
             {% else %}
             <tr>
