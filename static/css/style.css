@@ -165,6 +165,33 @@ textarea:focus {
     outline-offset: 2px;
 }
 
+input[type="file"] {
+    padding: 0.45rem 0.5rem;
+    color: var(--color-text);
+    background-color: var(--color-surface-elevated);
+}
+
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+    margin-right: 0.75rem;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid var(--color-primary);
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--color-primary);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+}
+
+input[type="file"]::file-selector-button:hover,
+input[type="file"]::-webkit-file-upload-button:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+    background-color: rgba(16, 247, 163, 0.2);
+}
+
 select {
     appearance: none;
 }
