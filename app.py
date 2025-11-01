@@ -8,6 +8,7 @@ from flask_wtf import CSRFProtect
 
 csrf = CSRFProtect()
 
+
 def create_app() -> Flask:
     load_dotenv()
     app = Flask(__name__, instance_relative_config=True)
@@ -17,9 +18,7 @@ def create_app() -> Flask:
         # SECRET_KEY — cryptographic key used to sign sessions and CSRF tokens.
         # Loaded from environment to avoid exposing secrets in source control.
         SECRET_KEY=os.environ.get("SECRET_KEY", "secret123"),
-        DATABASE=os.environ.get(
-            "DATABASE", str(Path(app.instance_path) / "secureleak.sqlite")
-        ),
+        DATABASE=os.environ.get("DATABASE", str(Path(app.instance_path) / "secureleak.sqlite")),
         # Disallows reading session cookies.
         # Protects against client-side script access if XSS ever occurs.
         SESSION_COOKIE_HTTPONLY=True,
