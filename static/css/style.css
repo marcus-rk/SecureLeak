@@ -175,6 +175,11 @@ select option {
     background-color: var(--color-surface-elevated);
 }
 
+textarea {
+    resize: vertical;
+    min-height: 50px;
+}
+
 /* --------------------------------
    Card sections
 --------------------------------- */
