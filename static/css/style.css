@@ -1,11 +1,10 @@
 /*
-    SecureLeak UI Theme
-    Maintainer: Tech Hacker (2025)
+    SecureLeak UI Theme and Stylesheet
 
-    Purpose
+    Purpose:
     - Centralizes styling for layout, navigation, auth forms, reporting tables, and CSRF helper.
 
-    Section Guide
+    Section Guide:
     - Theme tokens
     - Base layout
     - Header & navigation
@@ -14,10 +13,11 @@
     - Tables
     - CSRF token helper
 
-    Maintenance Notes
+    Maintenance Notes:
     - Preserve section dividers to keep related rules grouped.
     - Favor variable reuse before introducing new colors or spacing.
     - Document any major layout change directly above the affected section.
+    - Consider existing styles before adding new rules to avoid redundancy.
 */
 
 /* --------------------------------
