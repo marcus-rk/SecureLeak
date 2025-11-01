@@ -1,10 +1,15 @@
 {% extends "layout.html" %}
 
 {% block content %}
+{% set token = csrf_token() %}
 <section class="reports">
     <h2>New Report</h2>
     <form method="post" enctype="multipart/form-data">
-        {{ csrf_token() }}
+        <input type="hidden" name="csrf_token" value="{{ token }}">
+        <div class="csrf-toggle" data-token-container>
+            <button type="button" data-token-toggle>Show CSRF token</button>
+            <code data-token-value hidden>csrf token: {{ token }}</code>
+        </div>
         <label for="title">Title</label>
         <input id="title" name="title" required>
 
