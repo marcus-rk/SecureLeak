@@ -1,19 +1,9 @@
-# Ruff config: fast Python lints + formatting checks
+# Ruff config (TOML for .ruff.toml)
 line-length = 120
-extend-exclude = [
-  "venv",
-  "instance",
-  "__pycache__",
-  "uploads",
-]
+target-version = "py311"
+respect-gitignore = true
+extend-exclude = ["venv", ".venv", "instance", "__pycache__", "uploads", "node_modules"]
 
 [lint]
-select = [
-  "E",  # pycodestyle errors
-  "F",  # pyflakes
-  "I",  # isort
-  "B",  # flake8-bugbear
-]
-ignore = [
-  # Allow unused import in __init__-like modules, etc., if needed later
-]
+select = ["E", "F", "I", "B"]
+ignore = []
