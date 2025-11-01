@@ -42,7 +42,7 @@ jobs:
 
       - name: Jinja/HTML lint (djlint)
         run: |
-          djlint templates --check --quiet --profile=jinja
+          djlint templates --check --profile=jinja
 
       - name: Python security audit (Bandit)
         run: |
