@@ -11,6 +11,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -21,35 +29,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install linters (Python & Jinja)
+      - name: Install tooling (linters & security)
         run: |
-          pip install ruff djlint
+          pip install ruff djlint bandit pip-audit
 
-      # Auto-fix Python (imports + formatting) so the job doesn’t fail on style
-      - name: Ruff autofix
+      # Python style & imports: auto-fix then verify
+      - name: Python lint (ruff)
         run: |
           ruff check . --fix
           ruff format .
-
-      # Keep a final check to fail only on remaining issues Ruff can’t fix
-      - name: Ruff verify
-        run: |
           ruff check .
-
-      - name: Set up Node (for JS/CSS lint)
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: JavaScript lint (eslint)
-        run: |
-          npx --yes eslint "static/js/**/*.js" --no-error-on-unmatched-pattern || true
-
-      - name: CSS lint (stylelint)
-        run: |
-          npx --yes -p stylelint@16 -p stylelint-config-standard@36 \
-            stylelint "static/**/*.css" --allow-empty-input || true
 
       - name: Jinja/HTML lint (djlint)
         run: |
-          djlint templates --check --quiet --profile=jinja || true
+          djlint templates --check --quiet --profile=jinja
+
+      - name: Python security audit (Bandit)
+        run: |
+          bandit -q -r . -x venv,.venv,instance,__pycache__
+
+      - name: Dependency vulnerability audit (pip-audit)
+        run: |
+          pip-audit -r requirements.txt
