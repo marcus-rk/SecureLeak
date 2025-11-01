@@ -1,0 +1,19 @@
+# Ruff config: fast Python lints + formatting checks
+line-length = 100
+extend-exclude = [
+  "venv",
+  "instance",
+  "__pycache__",
+  "uploads",
+]
+
+[lint]
+select = [
+  "E",  # pycodestyle errors
+  "F",  # pyflakes
+  "I",  # isort
+  "B",  # flake8-bugbear
+]
+ignore = [
+  # Allow unused import in __init__-like modules, etc., if needed later
+]

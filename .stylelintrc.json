@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "block-no-empty": true,
+    "color-no-invalid-hex": true,
+    "declaration-block-no-duplicate-properties": true,
+    "declaration-block-trailing-semicolon": "always",
+    "no-duplicate-selectors": true,
+    "no-empty-source": null,
+    "string-no-newline": true
+  }
+}

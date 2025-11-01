@@ -1,0 +1,4 @@
+venv/
+**/*.min.css
+static/vendor/
+node_modules/
