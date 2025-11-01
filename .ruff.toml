@@ -1,5 +1,5 @@
 # Ruff config: fast Python lints + formatting checks
-line-length = 100
+line-length = 120
 extend-exclude = [
   "venv",
   "instance",
