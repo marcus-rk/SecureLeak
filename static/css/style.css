@@ -65,6 +65,39 @@ main {
 }
 
 /* --------------------------------
+   Typography
+--------------------------------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0 0 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--color-text);
+}
+
+h1 {
+    font-size: clamp(2rem, 3vw, 2.75rem);
+    color: var(--color-text);
+}
+
+h2 {
+    font-size: 1.5rem;
+}
+
+h3 {
+    font-size: 1.25rem;
+}
+
+p {
+    margin: 0 0 1rem;
+    color: var(--color-text-muted);
+}
+
+/* --------------------------------
     Header & navigation
 --------------------------------- */
 header {
@@ -230,6 +263,13 @@ section.reports form {
     gap: 1rem;
 }
 
+section.auth-form h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
 section.reports h2 {
     margin: 0;
     font-size: 1.5rem;
@@ -248,6 +288,7 @@ table {
     background-color: var(--color-surface);
     box-shadow: 0 18px 40px -35px rgba(16, 247, 163, 0.3);
     overflow: hidden;
+    cursor: default;
 }
 
 thead {
