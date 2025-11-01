@@ -310,8 +310,9 @@ Each phase builds naturally on the previous one — simple, readable, and exam-f
 ## Quick Start
 
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 flask --app app run --debug
 ```

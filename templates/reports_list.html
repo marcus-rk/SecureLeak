@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="reports">
+    <h2>Reports</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Severity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr>
+                <td>{{ report.title }}</td>
+                <td>{{ report.status }}</td>
+                <td>{{ report.severity }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3">No reports yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

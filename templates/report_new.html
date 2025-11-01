@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="reports">
+    <h2>New Report</h2>
+    <form method="post" enctype="multipart/form-data">
+        {{ csrf_token() }}
+        <label for="title">Title</label>
+        <input id="title" name="title" required>
+
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="6" required></textarea>
+
+        <label for="severity">Severity</label>
+        <select id="severity" name="severity">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+        </select>
+
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+        </select>
+
+        <label for="attachment">Attachment</label>
+        <input id="attachment" name="attachment" type="file" accept="image/*">
+
+        <button type="submit">Submit report</button>
+    </form>
+</section>
+{% endblock %}

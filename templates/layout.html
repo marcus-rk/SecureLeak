@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>SecureLeak</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>SecureLeak</h1>
+        <nav>
+            <a href="{{ url_for('reports.list_reports') }}">Reports</a>
+            <a href="{{ url_for('reports.new_report') }}">New Report</a>
+            <a href="{{ url_for('auth.login') }}">Login</a>
+            <form action="{{ url_for('auth.logout') }}" method="post">
+                <button type="submit">Logout</button>
+            </form>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</body>
+</html>
