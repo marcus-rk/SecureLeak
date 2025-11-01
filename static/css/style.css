@@ -73,7 +73,6 @@ h3,
 h4,
 h5,
 h6 {
-    margin: 0 0 1rem;
     font-weight: 600;
     line-height: 1.2;
     color: var(--color-text);
@@ -104,7 +103,7 @@ header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 2rem;
+    padding: 0.5rem 2rem;
     border-bottom: 1px solid var(--color-border);
     background-color: var(--color-surface);
     box-shadow: 0 12px 40px -32px rgba(16, 247, 163, 0.3);
