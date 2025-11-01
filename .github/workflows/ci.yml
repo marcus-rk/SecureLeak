@@ -47,7 +47,8 @@ jobs:
 
       - name: CSS lint (stylelint)
         run: |
-          npx --yes stylelint "static/**/*.css" --allow-empty-input || true
+          npx --yes -p stylelint@16 -p stylelint-config-standard@36 \
+            stylelint "static/**/*.css" --allow-empty-input || true
 
       - name: Jinja/HTML lint (djlint)
         run: |
