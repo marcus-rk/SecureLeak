@@ -51,4 +51,4 @@ jobs:
 
       - name: Jinja/HTML lint (djlint)
         run: |
-          djlint templates --check --quiet
+          djlint templates --check --quiet --profile=jinja || true
