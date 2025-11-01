@@ -72,50 +72,220 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 
 ---
 
-## 📂-Structure
+## 📂 Project Structure
 
 ```
 secureleak/
-├─ app.py               # Flask setup, routes, CSRF, headers
-├─ db.py                # DB connection & helper functions
-├─ .env                 # SECRET_KEY, DB path, etc.
-├─ requirements.txt
-├─ /routes/             # Blueprints: auth.py, reports.py, admin.py
-├─ /templates/          # Jinja2 templates (SSR)
-├─ /static/             # css/, js/
-└─ /uploads/            # stored files (not publicly served)
+├─ app.py               # Main Flask app: config, CSRF, header setup, blueprint registration
+├─ db.py                # Database helper functions (connect, query, schema)
+├─ .env                 # Environment secrets (SECRET_KEY, DB path, etc.)
+├─ requirements.txt      # Python dependencies
+├─ .gitignore            # Git exclusions (env, db, uploads, etc.)
+│
+├─ /routes/              # Request handlers ("controllers") organized by feature
+│   ├─ auth.py           # User register, login, logout
+│   └─ reports.py        # Create and list vulnerability reports
+│
+├─ /templates/           # Dynamic HTML pages rendered with Jinja2
+│   ├─ layout.html       # Base layout (shared header/nav)
+│   ├─ login.html        # Login form
+│   ├─ register.html     # Registration form
+│   ├─ reports_list.html # Shows all reports
+│   └─ report_new.html   # Form to create a new report
+│
+├─ /static/              # Front-end assets served directly
+│   ├─ css/style.css     # Styling
+│   └─ js/main.js        # Small client-side interactions
+│
+├─ /uploads/             # Uploaded screenshots or PoCs (not publicly served)
+│
+└─ /instance/            # Local runtime data (SQLite DB file, dev configs)
+    └─ secureleak.sqlite
 ```
+
+**How it works:**
+- `app.py` creates the Flask app and connects everything.  
+- `routes/` holds the actual URL endpoints (one file per feature).  
+- `templates/` holds the HTML that gets rendered when a route calls `render_template()`.  
+- `static/` holds CSS, JS, and images — Flask serves them directly from `/static/...`.  
+- `instance/` holds local SQLite database and other writable runtime files.  
+- `uploads/` stores user-uploaded files outside the static path for safety.
 
 ---
 
-## Development Outline
+# 🧭 SecureLeak – Development Outline
 
-### Phase 1 – Setup
-- Flask app, Talisman (security headers), CSRFProtect.
-- Base templates and static assets.
+A simple, phased roadmap with both **Feature (how)** and **Security (what/why/how)** focus.  
+Each phase builds naturally on the previous one — simple, readable, and exam-friendly.
 
-### Phase 2 – Authentication
-- Register/login/logout.
-- Argon2 password hashing.
-- Session cookies: `HttpOnly`, `SameSite=Lax`.
+---
 
-### Phase 3 – Reporting
-- CRUD reports with parameterized queries.
-- Output escaping and visibility rules.
+## **Phase 1 – Setup (Skeleton)**
 
-### Phase 4 – Uploads
-- Safe upload handling.
-- Serve files through access-controlled route.
+**Feature (how):**
+- Create base files: `app.py`, `db.py`, `.env`, `requirements.txt`, `.gitignore`
+- Add folders: `routes/`, `templates/`, `static/{css,js}`, `instance/`
+- Add base templates: `layout.html`, `index.html`
+- Static assets: `style.css`, `main.js`
+- Create a test route `/` in `app.py` or a tiny blueprint
 
-### Phase 5 – Comments
-- Add comment threads.
-- Escape content + enforce CSRF.
+**Security (what/why/how):**
+- CSRF protection: enable `Flask-WTF` → `CSRFProtect(app)`
+- HTTP headers: `Flask-Talisman` with a minimal CSP (`default-src 'self'`)
+- Secret management: store `SECRET_KEY` in `.env`
 
-### Phase 6 – Admin Tools
-- Role enforcement, triage, close, delete, import (XXE-safe).
+**Done when:**
+- The home page renders via Jinja2
+- A dummy POST without a CSRF token returns 400/403
+- App runs at `http://localhost:5000`
 
-### Phase 7 – Final Hardening
-- Review headers, CSP, HTTPS setup.
+---
+
+## **Phase 2 – Authentication (Register/Login/Logout)**
+
+**Feature (how):**
+- DB table: `users(id, email unique, password_hash, role)`
+- Templates: `login.html`, `register.html`
+- Routes (`routes/auth.py`):  
+  - `GET/POST /register` (form → create user)  
+  - `GET/POST /login` (form → session cookie)  
+  - `POST /logout`
+- Minimal CSS for forms
+
+**Security (what/why/how):**
+- Password hashing: `argon2-cffi`  
+- Sessions: Flask cookie `HttpOnly`, `SameSite='Lax'`
+- CSRF tokens in all auth forms  
+- Validation: trim inputs, require password length
+
+**Done when:**
+- Can register, log in, and log out
+- Wrong password fails safely
+- Cookies have `HttpOnly` and `SameSite=Lax`
+
+---
+
+## **Phase 3 – Reporting (Create/List/View)**
+
+**Feature (how):**
+- DB table: `reports(id, owner_id, title, description, severity, status)`  
+  - `status`: `'public' | 'private' | 'closed'`
+- Templates: `reports_list.html`, `report_new.html`
+- Routes (`routes/reports.py`):  
+  - `GET /reports` (list public + own private)  
+  - `GET/POST /reports/new` (create new report)
+- Basic table layout in CSS
+
+**Security (what/why/how):**
+- SQL injection: **parameterized queries only**
+- XSS: auto-escape Jinja (`{{ title }}` not `|safe`)
+- CSRF token in create form
+- Authorization: limit visibility (no foreign private reports)
+
+**Done when:**
+- Users can create, list, and view their own reports
+- Private reports stay private
+- Random SQL input doesn’t break queries
+
+---
+
+## **Phase 4 – Uploads (Screenshots/Proofs)**
+
+**Feature (how):**
+- Add `/uploads/` directory (outside `/static/`)
+- Form: `<input type="file" accept="image/*">` in `report_new.html`
+- Routes:  
+  - `POST /reports/new` handles uploads  
+  - `GET /reports/file/<name>` serves via `send_file()`
+- CSS: small thumbnail styling
+
+**Security (what/why/how):**
+- File validation: allow only `image/*` MIME types
+- Filename: sanitize + randomize with `secure_filename` + `secrets.token_hex()`
+- Access control: private report files accessible only to owner/admin
+- Prevent direct public serving of `/uploads/`
+
+**Done when:**
+- Non-images or large files are rejected
+- Private file URL blocked for other users
+
+---
+
+## **Phase 5 – Comments (Discussion)**
+
+**Feature (how):**
+- DB: `comments(id, report_id, author_id, body, created_at)`
+- Template: add comment section in `report_detail.html`
+- Route: `POST /reports/<id>/comment` (insert → redirect)
+
+**Security (what/why/how):**
+- XSS: auto-escape comment text
+- CSRF token in comment form
+- Authorization: only authenticated users; only owners/admins for private reports
+
+**Done when:**
+- Comments display correctly
+- `<script>` tags render as text, not run
+- Missing CSRF token blocks submission
+
+---
+
+## **Phase 6 – Admin Tools (Publish/Close/Delete)**
+
+**Feature (how):**
+- Admin role: add `role='admin'` in DB
+- Admin page: `admin_dashboard.html` with status buttons  
+  - Publish → `status='public'`  
+  - Make Private → `status='private'`  
+  - Close → `status='closed'`
+- Routes (`routes/admin.py`):  
+  - `GET /admin` (dashboard)  
+  - `POST /admin/report/<id>/<action>` (publish, close, etc.)
+
+**Security (what/why/how):**
+- Authorization: `@require_admin` on all admin routes
+- CSRF: tokens on all admin forms
+- Input sanitization: validate `id` and `action`
+- Optional import demo: if added, disable XML external entities
+
+**Done when:**
+- Admin can see all reports
+- Buttons change status correctly
+- Non-admin access denied to `/admin` routes
+
+---
+
+## **Phase 7 – Final Hardening (Headers, HTTPS, Review)**
+
+**Feature (how):**
+- Remove all inline JS → move to `static/js/main.js`
+- Configure final CSP:  
+  `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:`
+- Test under Gunicorn/Nginx + HTTPS
+
+**Security (what/why/how):**
+- Headers via `Flask-Talisman`: HSTS, Referrer-Policy, X-Frame-Options, X-Content-Type-Options
+- Cookies: set `Secure=True` (production)
+- Manual review: test XSS, CSRF, SQLi, file upload safety
+
+**Done when:**
+- No inline JS breaks under CSP
+- HTTPS works, cookies marked Secure
+- Manual “attack” tests all fail safely
+
+---
+
+## ✅ **Checklist Summary**
+
+| Area | What You Verify |
+|:------|:----------------|
+| Templates | Proper escaping, no inline JS |
+| Auth | Passwords hashed, cookies protected |
+| Reports | SQLi prevented, visibility correct |
+| Uploads | No file exposure, validated types |
+| Comments | XSS & CSRF safe |
+| Admin | Role restrictions enforced |
+| Config | CSP/HSTS headers, secrets in `.env` |
 
 ---
 
