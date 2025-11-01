@@ -20,7 +20,8 @@
 
 ## Project Overview
 
-**SecureLeak** is a simplified bug tracker where developers (users) can submit **vulnerability reports** to admins.  
+**SecureLeak** is a simplified bug tracker where developers (users) can submit **vulnerability reports** to admins. 
+ 
 Admins review, comment on, close, or delete reports (e.g., spam).  
 Reports can be **public** (for learning) or **private** (internal).  
 Optional **file uploads** allow screenshots or proof-of-concepts.  
