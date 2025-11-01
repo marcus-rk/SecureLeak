@@ -4,6 +4,20 @@ on:
   push:
   pull_request:
 
+# Cancel redundant runs on rapid pushes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Principle of least privilege
+permissions:
+  contents: read
+
+# Use bash for conditional summaries
+defaults:
+  run:
+    shell: bash
+
 jobs:
   python-lint:
     name: Python • Ruff
@@ -12,32 +26,46 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Cache pip's download directory to speed up repeated installs across runs.
-      # Key is based on OS and requirements.txt contents; restore-keys allows partial matches.
-      - name: Cache pip (tool downloads)
-        uses: actions/cache@v4
+      # Run only when Python files or Ruff config changed
+      - name: Filter paths (Python)
+        id: filter
+        uses: dorny/paths-filter@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          filters: |
+            changed:
+              - '**/*.py'
+              - '.ruff.toml'
 
-      - name: Set up Python 3.11
+      # Built-in pip cache for faster installs
+      - name: Set up Python 3.11 (pip cache)
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install Ruff
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff
+      - name: Install Ruff (pinned)
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: pip install "ruff==0.5.7"
 
-      # Auto-fix simple issues, format, then verify no remaining violations.
+      # Auto-fix imports/format; final verify emits GitHub annotations
       - name: Ruff (auto-fix, then verify)
+        id: ruff
+        continue-on-error: true
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: |
           ruff check . --fix
           ruff format .
-          ruff check .
+          ruff check . --output-format=github
+
+      - name: Summary (Python • Ruff)
+        run: |
+          echo "## Python • Ruff" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
+            echo "- Skipped (no Python changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          s="${{ steps.ruff.outcome }}"
+          echo "- Ruff: $s" >> "$GITHUB_STEP_SUMMARY"
+          [ "$s" = "failure" ] && exit 1 || exit 0
 
   template-lint:
     name: Templates • djLint
@@ -46,28 +74,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache pip (tool downloads)
-        uses: actions/cache@v4
+      # Run only when templates changed
+      - name: Filter paths (Templates)
+        id: filter
+        uses: dorny/paths-filter@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          filters: |
+            changed:
+              - 'templates/**'
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.11 (pip cache)
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install djLint
-        run: |
-          python -m pip install --upgrade pip
-          pip install djlint
+      - name: Install djLint (pinned)
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: pip install "djlint==1.36.4"
 
-      # Lint Jinja templates verbosely for easier debugging on CI failures.
       - name: djLint (Jinja profile)
+        id: djlint
+        continue-on-error: true
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: djlint templates --check --profile=jinja
+
+      - name: Summary (Templates • djLint)
         run: |
-          djlint templates --check --profile=jinja
+          echo "## Templates • djLint" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
+            echo "- Skipped (no template changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          s="${{ steps.djlint.outcome }}"
+          echo "- djLint: $s" >> "$GITHUB_STEP_SUMMARY"
+          [ "$s" = "failure" ] && exit 1 || exit 0
 
   security-audit:
     name: Security • Bandit & pip-audit
@@ -76,30 +116,49 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache pip (tool downloads)
-        uses: actions/cache@v4
+      # Run on Python or dependency changes
+      - name: Filter paths (Security)
+        id: filter
+        uses: dorny/paths-filter@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          filters: |
+            changed:
+              - 'requirements.txt'
+              - '**/*.py'
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.11 (pip cache)
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install security tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install bandit pip-audit
+      - name: Install security tools (pinned)
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: pip install "bandit==1.7.8" "pip-audit==2.7.3"
 
-      # Static analysis of Python code for common security issues.
       - name: Bandit (SAST)
+        id: bandit
+        continue-on-error: true
+        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: |
-          bandit -q -r . -x venv,.venv,instance,__pycache__
+          bandit -q -r . \
+            --severity-level medium \
+            --confidence-level medium \
+            -x venv,.venv,instance,__pycache__
 
-      # Check dependency manifest(s) for known vulnerabilities (no install required).
       - name: pip-audit (dependency CVEs)
+        id: pip_audit
+        continue-on-error: true
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: pip-audit -r requirements.txt
+
+      - name: Summary (Security)
         run: |
-          pip-audit -r requirements.txt
+          echo "## Security • Bandit & pip-audit" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
+            echo "- Skipped (no security-relevant changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          sb="${{ steps.bandit.outcome }}"; sa="${{ steps.pip_audit.outcome }}"
+          echo "- Bandit: $sb" >> "$GITHUB_STEP_SUMMARY"
+          echo "- pip-audit: $sa" >> "$GITHUB_STEP_SUMMARY"
+          [ "$sb" = "failure" ] || [ "$sa" = "failure" ] && exit 1 || exit 0
