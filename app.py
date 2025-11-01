@@ -37,7 +37,7 @@ def create_app() -> Flask:
 
     @app.route("/")
     def index() -> str:
-        return render_template("register.html")
+        return render_template("login.html")
 
     # Initialize and return the Flask application instance
     return app
