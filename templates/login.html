@@ -4,25 +4,24 @@
     Successful submission posts back to the auth blueprint for credential handling.
 #}
 {% extends "layout.html" %}
-
 {% block content %}
-{% set token = csrf_token() %}
-<section class="auth-form">
-    <h2>Login</h2>
-    <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ token }}">
-        <div class="csrf-toggle" data-token-container>
-            <button type="button" data-token-toggle>Show CSRF token</button>
-            <code data-token-value hidden>{{ token }}</code>
-        </div>
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required>
-
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required>
-
-        <button type="submit">Sign in</button>
-    </form>
-    <p><a href="{{ url_for('auth.register') }}">Need an account?</a></p>
-</section>
+    {% set token = csrf_token() %}
+    <section class="auth-form">
+        <h2>Login</h2>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ token }}">
+            <div class="csrf-toggle" data-token-container>
+                <button type="button" data-token-toggle>Show CSRF token</button>
+                <code data-token-value hidden>{{ token }}</code>
+            </div>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required>
+            <button type="submit">Sign in</button>
+        </form>
+        <p>
+            <a href="{{ url_for('auth.register') }}">Need an account?</a>
+        </p>
+    </section>
 {% endblock %}

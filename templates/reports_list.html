@@ -3,34 +3,38 @@
     Each row delegates to `reports.list_reports`, which injects SAMPLE_REPORTS.
     Cells link to `reports.view_report` so clicking navigates to the detail view.
 #}
-
 {% extends "layout.html" %}
-
 {% block content %}
-<section class="reports">
-    <h2>Reports</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Severity</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for report in reports %}
-            <tr>
-                {% set detail_url = url_for('reports.view_report', report_id=report.id) %}
-                <td><a class="table-link" href="{{ detail_url }}">{{ report.title }}</a></td>
-                <td><a class="table-link" href="{{ detail_url }}">{{ report.status }}</a></td>
-                <td><a class="table-link" href="{{ detail_url }}">{{ report.severity }}</a></td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="3">No reports yet.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</section>
+    <section class="reports">
+        <h2>Reports</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Severity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                    <tr>
+                        {% set detail_url = url_for('reports.view_report', report_id=report.id) %}
+                        <td>
+                            <a class="table-link" href="{{ detail_url }}">{{ report.title }}</a>
+                        </td>
+                        <td>
+                            <a class="table-link" href="{{ detail_url }}">{{ report.status }}</a>
+                        </td>
+                        <td>
+                            <a class="table-link" href="{{ detail_url }}">{{ report.severity }}</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3">No reports yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
 {% endblock %}
