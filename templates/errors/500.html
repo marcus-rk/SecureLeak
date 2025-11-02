@@ -1,8 +1,10 @@
 {% extends 'layout.html' %}
 {% block content %}
-  <section>
-    <h2>Something went wrong</h2>
-    <p>An unexpected error occurred. Please try again in a moment.</p>
-    <p><a href="{{ url_for('reports.list_reports') }}">Back to Reports</a></p>
-  </section>
+    <section>
+        <h2>Something went wrong</h2>
+        <p>An unexpected error occurred. Please try again in a moment.</p>
+        <p>
+            <a href="{{ url_for('reports.list_reports') }}">Back to Reports</a>
+        </p>
+    </section>
 {% endblock %}
