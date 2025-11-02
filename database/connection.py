@@ -7,7 +7,8 @@ from flask import current_app, g
 
 
 def get_db() -> sqlite3.Connection:
-    """Return a SQLite connection stored on Flask's `g` context.
+    """Return a SQLite connection stored on Flask's `g` context. 
+    (g context = Flask's application context global storage)
 
     Ensures the database file and parent directory exist and configures rows
     to be dict-like via `sqlite3.Row`.
@@ -29,10 +30,7 @@ def close_db(_: Any = None) -> None:
 
 
 def init_db(schema_sql: Iterable[str]) -> None:
-    """Initialize the database by executing the provided SQL statements.
-
-    Intended for one-off setup or migrations in simple apps.
-    """
+    """Initialize the database by executing the provided SQL statements."""
     db = get_db()
     with closing(db.cursor()) as cur:
         for statement in schema_sql:

@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+# Optional means a value that can be of a specified type or None. Better for modularity
 
 from database.connection import get_db
 

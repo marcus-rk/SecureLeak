@@ -4,10 +4,7 @@ from database.connection import get_db
 
 
 def apply(sql_path: str | Path | None = None) -> None:
-    """Apply the migration SQL to the configured SQLite database.
-
-    KISS: read the file and run it with executescript().
-    """
+    """Apply the migration SQL to the configured SQLite database."""
     if sql_path is None:
         sql_path = Path(__file__).with_name("migrations") / "init.sql"
     sql_text = Path(sql_path).read_text(encoding="utf-8")
