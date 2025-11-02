@@ -31,6 +31,14 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 
 ---
 
+## Documentation
+
+- Project overview: [docs/project_overview.md](docs/project_overview.md)
+- Authentication & sessions: [docs/auth.md](docs/auth.md)
+- Security model (threats/defenses): [docs/security_model.md](docs/security_model.md)
+
+---
+
 ## Core Security Focus
 
 | Threat | Mitigation |
@@ -77,50 +85,69 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 ## 📂 Project Structure
 
 ```
-secureleak/
-├─ app.py                # Flask app: config, CSRF, security headers, blueprints, auto DB init on first run
-├─ .env                  # Env vars (SECRET_KEY, DATABASE path)
-├─ requirements.txt      # Python dependencies
-├─ pytest.ini            # pytest configuration
-├─ .gitignore            # Git exclusions (env, db, uploads, etc.)
+SecureLeak/
+├─ app.py
+├─ requirements.txt
+├─ pytest.ini
+├─ README.md
+├─ docs/
+│  ├─ project_overview.md
+│  ├─ auth.md
+│  └─ security_model.md
 │
-├─ /database/            # Database layer
-│   ├─ connection.py     # get_db(), close_db(), init_db()
-│   ├─ initialize.py     # Apply migrations/init.sql (python -m database.initialize)
-│   └─ migrations/
-│       └─ init.sql      # Create tables + indexes
+├─ database/
+│  ├─ connection.py
+│  ├─ initialize.py
+│  └─ migrations/
+│     └─ init.sql
 │
-├─ /repository/          # Data-access helpers (CRUD)
-│   ├─ users_repo.py     # CRUD for users table
-│   ├─ reports_repo.py   # CRUD for reports table
-│   └─ comments_repo.py  # CRUD for comments table
+├─ repository/
+│  ├─ users_repo.py
+│  ├─ reports_repo.py
+│  └─ comments_repo.py
 │
-├─ /routes/              # Feature routes (controllers)
-│   ├─ auth.py           # Login, register, logout
-│   └─ reports.py        # List/view/new reports
+├─ routes/
+│  ├─ auth.py
+│  └─ reports.py
 │
-├─ /templates/           # Jinja2 HTML templates
-│   ├─ layout.html
-│   ├─ login.html
-│   ├─ register.html
-│   ├─ reports_list.html
-│   ├─ report_detail.html
-│   └─ report_new.html
+├─ security/
+│  ├─ auth_utils.py
+│  └─ decorators.py
 │
-├─ /static/              # Front-end assets
-│   ├─ css/style.css
-│   ├─ js/main.js
-│   └─ icons/
+├─ templates/
+│  ├─ layout.html
+│  ├─ login.html
+│  ├─ register.html
+│  ├─ reports_list.html
+│  ├─ report_detail.html
+│  ├─ report_new.html
+│  └─ errors/
+│     ├─ 400.html
+│     ├─ 404.html
+│     └─ 500.html
 │
-├─ /tests/               # Test suite
-│   ├─ conftest.py
-│   ├─ auth/test_login.py
-│   └─ security/test_headers.py
+├─ static/
+│  ├─ css/
+│  │  └─ style.css
+│  ├─ js/
+│  │  └─ main.js
+│  └─ icons/
 │
-├─ /uploads/             # Uploaded files (not publicly served)
+├─ tests/
+│  ├─ conftest.py
+│  ├─ auth/
+│  │  └─ test_login.py
+│  ├─ security/
+│  │  ├─ test_headers.py
+│  │  └─ test_csp_headers.py
+│  └─ repository/
+│     ├─ test_users_repo.py
+│     ├─ test_reports_repo.py
+│     └─ test_comments_repo.py
 │
-└─ /instance/            # Local runtime data (SQLite DB file, dev configs)
-  └─ secureleak.sqlite
+├─ uploads/
+└─ instance/
+   └─ logs/
 ```
 
 **How it works:**
@@ -315,8 +342,8 @@ Each phase builds naturally on the previous one — simple, readable, and exam-f
 | Method | Path | Purpose |
 |:--------|:------|:---------|
 | `GET` | `/` | Home page |
-| `GET/POST` | `/register`, `/login` | User auth |
-| `POST` | `/logout` | End session |
+| `GET/POST` | `/auth/register`, `/auth/login` | User auth |
+| `POST` | `/auth/logout` | End session |
 | `GET/POST` | `/reports/new` | Submit new report |
 | `GET` | `/reports` | List reports |
 | `GET` | `/reports/<id>` | View single report |

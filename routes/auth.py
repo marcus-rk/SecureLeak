@@ -1,32 +1,3 @@
-"""
-Authentication routes and session handling.
-
-Flask sessions are cookie-based and cryptographically signed using the app's
-SECRET_KEY (see app.py). This means:
-- The session lives in a client cookie, but Flask will reject any tampered
-    cookie because the signature won't validate.
-- Security flags like SESSION_COOKIE_HTTPONLY and SESSION_COOKIE_SAMESITE are
-    configured in app.py to harden the cookie against XSS and CSRF-by-default.
-    - SESSION_COOKIE_HTTPONLY: JavaScript cannot access the session cookie,
-      mitigating the risk of XSS attacks.
-    - SESSION_COOKIE_SAMESITE: Cookies are only sent in a first-party context,
-      reducing the risk of CSRF attacks.
-
-Why we clear() the session at login (session fixation defense):
-- If an attacker can force a victim to use a known session cookie before the
-    victim logs in, and the app reuses that same session after authentication,
-    the attacker might be able to "fix" the victim's session identity.
-- By calling session.clear() immediately before setting the authenticated
-    identity, we drop any pre-existing (possibly attacker-influenced) data and
-    start a fresh, minimal identity. With Flask's cookie sessions, this is the
-    canonical, framework-supported way to rotate session state at auth boundaries.
-
-Relationship to CSRF:
-- Flask-WTF issues CSRF tokens that are tied to the user's session. Clearing
-    the session ensures stale tokens (from a pre-auth state) won't carry over
-    after login, which is desirable at an auth boundary.
-"""
-
 from flask import (
     Blueprint,
     flash,
