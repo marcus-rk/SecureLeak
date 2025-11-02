@@ -13,6 +13,7 @@ from security.auth_utils import (
     build_hasher,
     maybe_upgrade_hash,
     normalize_email,
+    normalize_and_validate_email,
     verify_password,
     validate_password,
 )
@@ -32,7 +33,8 @@ def login() -> ResponseReturnValue:
 # POST: Login Authentication
 @auth_bp.route("/login", methods=["POST"])
 def login_post() -> ResponseReturnValue:
-    email = normalize_email(request.form.get("email", ""))
+    email_raw = request.form.get("email", "")
+    email = normalize_and_validate_email(email_raw)
     password = request.form.get("password", "")
 
     if not email or not password:
@@ -60,7 +62,8 @@ def register() -> ResponseReturnValue:
 # POST: Create account
 @auth_bp.route("/register", methods=["POST"])
 def register_post() -> ResponseReturnValue:
-    email = normalize_email(request.form.get("email", ""))
+    email_raw = request.form.get("email", "")
+    email = normalize_and_validate_email(email_raw)
     password = request.form.get("password", "")
     username = (request.form.get("username") or "").strip()
     # Security: ignore client-provided admin role in Phase 2; default to user

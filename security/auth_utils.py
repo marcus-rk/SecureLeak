@@ -1,5 +1,6 @@
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Optional
 from argon2 import PasswordHasher
+from email_validator import EmailNotValidError, validate_email
 
 
 def build_hasher() -> PasswordHasher:
@@ -14,6 +15,20 @@ def build_hasher() -> PasswordHasher:
 
 def normalize_email(s: str) -> str:
     return (s or "").strip().lower()
+
+
+def normalize_and_validate_email(s: str) -> Optional[str]:
+    """Validate and normalize an email address.
+
+    - Returns a canonical, normalized address (IDNA domain, case-folded) on success.
+    - Returns None if invalid. Deliverability checks are disabled for speed/offline tests.
+    """
+    try:
+        result = validate_email((s or "").strip(), check_deliverability=False)
+        # email-validator already normalizes; ensure lower for DB uniqueness invariants
+        return result.normalized.lower()
+    except EmailNotValidError:
+        return None
 
 
 def verify_password(hasher: PasswordHasher, stored_hash: str, candidate: str) -> bool:
