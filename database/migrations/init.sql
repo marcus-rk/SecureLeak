@@ -4,10 +4,10 @@ BEGIN TRANSACTION;
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
+    email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    name TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    role TEXT NOT NULL CHECK (role IN ('user','admin')),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS reports (
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS reports (
     status TEXT NOT NULL,
     severity TEXT NOT NULL,
     summary TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS comments (
@@ -24,9 +24,18 @@ CREATE TABLE IF NOT EXISTS comments (
     report_id INTEGER NOT NULL,
     user_id INTEGER,
     content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- Indexes
+-- Fast listing/filtering of reports
+CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_status_created_at ON reports (status, created_at DESC);
+
+-- Fast comment lookups per report/user
+CREATE INDEX IF NOT EXISTS idx_comments_report_created_at ON comments (report_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_comments_user_created_at ON comments (user_id, created_at DESC);
 
 COMMIT;
