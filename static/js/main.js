@@ -11,26 +11,42 @@ const initConfirmDialogs = () => {
   });
 };
 
-// Toggle visibility of CSRF tokens for users who want to inspect them manually.
+// Toggle visibility of CSRF tokens and optionally include/exclude them from submission.
 const initTokenToggles = () => {
-  const toggleButtons = document.querySelectorAll("[data-token-toggle]");
-  toggleButtons.forEach((button) => {
-    const container = button.closest("[data-token-container]");
-    const valueElement = container?.querySelector("[data-token-value]");
-    if (!container || !valueElement) {
+  const containers = document.querySelectorAll("[data-token-container]");
+  containers.forEach((container) => {
+    const button = container.querySelector("[data-token-toggle]");
+    const valueElement = container.querySelector("[data-token-value]");
+    const includeCheckbox = container.querySelector("[data-token-include]");
+    const form = container.closest("form");
+    const hiddenInput = form?.querySelector("input[name='csrf_token'][data-token-input]");
+    if (!button || !valueElement || !form || !hiddenInput) {
       return;
     }
 
+    // Show/hide the token value only (for learning/inspection)
     button.addEventListener("click", () => {
       const isHidden = valueElement.hasAttribute("hidden");
       if (isHidden) {
         valueElement.removeAttribute("hidden");
         button.textContent = "Hide CSRF token";
-        return;
+      } else {
+        valueElement.setAttribute("hidden", "");
+        button.textContent = "Show CSRF token";
       }
-      valueElement.setAttribute("hidden", "");
-      button.textContent = "Show CSRF token";
     });
+
+    // Include/exclude the CSRF token in the form submission by toggling disabled
+    if (includeCheckbox) {
+      includeCheckbox.addEventListener("change", () => {
+        const include = includeCheckbox.checked;
+        if (include) {
+          hiddenInput.removeAttribute("disabled");
+        } else {
+          hiddenInput.setAttribute("disabled", "");
+        }
+      });
+    }
   });
 };
 

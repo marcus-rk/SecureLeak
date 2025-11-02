@@ -8,9 +8,13 @@
     <section class="auth-form">
         <h2>Register</h2>
         <form method="post">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" data-token-input>
             <div class="csrf-toggle" data-token-container>
                 <button type="button" data-token-toggle>Show CSRF token</button>
+                <label>
+                    <input type="checkbox" data-token-include checked>
+                    Include CSRF token
+                </label>
                 <code data-token-value hidden>{{ csrf_token() }}</code>
             </div>
             <label for="name">Name</label>
