@@ -18,7 +18,7 @@ def create_app() -> Flask:
     app.config.from_mapping(
         # SECRET_KEY — cryptographic key used to sign sessions and CSRF tokens.
         # Loaded from environment to avoid exposing secrets in source control.
-        SECRET_KEY=os.environ.get("SECRET_KEY", "secret123"),
+        SECRET_KEY=os.environ.get("SECRET_KEY", "5f4dcc3b5aa765d61d8327deb882cf99"), # Bad practice!
         DATABASE=os.environ.get("DATABASE", str(Path(app.instance_path) / "secureleak.sqlite")),
         # Disallows reading session cookies.
         # Protects against client-side script access if XSS ever occurs.
