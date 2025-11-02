@@ -1,14 +1,20 @@
 {#
     Individual report detail card.
-    `reports.view_report` passes a single report dict with id, status, severity, and summary fields.
+    `reports.view_report` passes a single report dict with id, status, severity, and description fields.
     Provides a back link to the listing so browsing remains in the reports blueprint.
 #}
 {% extends "layout.html" %}
 {% block content %}
     <section class="reports">
-        <h2>{{ report.title }}</h2>
+    <h2>Report #{{ report.id }}: {{ report.title }}</h2>
         <div class="report-detail">
             <dl>
+                <div>
+                    <dt>Owner</dt>
+                    <dd>
+                        {{ report.owner_username or 'Unknown' }}
+                    </dd>
+                </div>
                 <div>
                     <dt>Status</dt>
                     <dd>
@@ -21,8 +27,13 @@
                         {{ report.severity|capitalize }}
                     </dd>
                 </div>
+                <div>
+                    <dt>Description</dt>
+                    <dd>
+                        {{ report.description }}
+                    </dd>
+                </div>
             </dl>
-            <p>{{ report.summary }}</p>
         </div>
         <a class="button-link" href="{{ url_for('reports.list_reports') }}">Back to reports</a>
     </section>

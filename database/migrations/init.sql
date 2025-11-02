@@ -13,11 +13,13 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_id INTEGER NOT NULL,
     title TEXT NOT NULL,
-    status TEXT NOT NULL,
+    description TEXT NOT NULL,
     severity TEXT NOT NULL,
-    summary TEXT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    status TEXT NOT NULL CHECK (status IN ('public','private','closed')),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS comments (
@@ -33,6 +35,7 @@ CREATE TABLE IF NOT EXISTS comments (
 -- Indexes
 -- Fast listing/filtering of reports
 CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_owner_created_at ON reports (owner_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reports_status_created_at ON reports (status, created_at DESC);
 
 -- Fast comment lookups per report/user
