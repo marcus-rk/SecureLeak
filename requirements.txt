@@ -3,3 +3,4 @@ Flask-WTF==1.2.1
 Flask-Talisman==1.0.0
 python-dotenv==1.0.1
 argon2-cffi==23.1.0
+pytest==8.2.2

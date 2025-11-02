@@ -8,7 +8,7 @@
     {% set token = csrf_token() %}
     <section class="auth-form">
         <h2>Login</h2>
-        <form method="post">
+        <form method="post" action="{{ url_for('auth.login') }}">
             <input type="hidden" name="csrf_token" value="{{ token }}">
             <div class="csrf-toggle" data-token-container>
                 <button type="button" data-token-toggle>Show CSRF token</button>

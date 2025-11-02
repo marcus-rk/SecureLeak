@@ -206,3 +206,50 @@ jobs:
           [ "$sb" = "failure" ] || [ "$sa" = "failure" ] && exit 1 || exit 0
         # We fail the job if either Bandit or pip-audit found issues serious
         # enough to set a failure. The summary always shows both results.
+
+  tests:
+    name: Tests • Pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Filter paths (Tests)
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            changed:
+              - '**/*.py'
+              - 'tests/**'
+              - 'pytest.ini'
+
+      - name: Set up Python 3.11 (pip cache)
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "pytest==8.2.2"
+
+      - name: Run tests (pytest)
+        id: pytest
+        continue-on-error: true
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: |
+          pytest -q
+
+      - name: Summary (Tests • Pytest)
+        run: |
+          echo "## Tests • Pytest" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
+            echo "- Skipped (no relevant changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          s="${{ steps.pytest.outcome }}"
+          echo "- pytest: $s" >> "$GITHUB_STEP_SUMMARY"
+          [ "$s" = "failure" ] && exit 1 || exit 0
