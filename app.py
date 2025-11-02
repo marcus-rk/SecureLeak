@@ -36,6 +36,9 @@ def create_app() -> Flask:
         from database.initialize import apply as init_db_from_sql
         with app.app_context():
             init_db_from_sql()
+            app.logger.info(f"Initialized new database at {db_file}")
+    else:
+        app.logger.info(f"Using existing database at {db_file}")
 
     # CSRFProtect: attaches per-session tokens to all forms to prevent Cross-Site Request Forgery (CSRF) attacks.
     # Talisman: enforces secure HTTP headers (CSP, HSTS, frame and content guards) to mitigate XSS and clickjacking.

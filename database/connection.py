@@ -15,8 +15,9 @@ def get_db() -> sqlite3.Connection:
     if "db" not in g:
         db_path = Path(current_app.config["DATABASE"])
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        g.db = sqlite3.connect(db_path)
-        g.db.row_factory = sqlite3.Row
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        g.db = conn
     return g.db
 
 
