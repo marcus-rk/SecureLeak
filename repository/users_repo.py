@@ -24,12 +24,20 @@ def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
 
 
 def update_user(user_id: int, **fields: Any) -> bool:
-    if not fields:
+    """Update allowed user columns using a whitelist to avoid SQL injection.
+
+    Allowed fields: email, password_hash, name, role.
+    Returns True if a row was updated.
+    """
+    allowed = {"email", "password_hash", "name", "role"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
         return False
     db = get_db()
-    cols = ", ".join([f"{k} = ?" for k in fields.keys()])
-    values = list(fields.values()) + [user_id]
-    cur = db.execute(f"UPDATE users SET {cols} WHERE id = ?", values)
+    cols = ", ".join([f"{k} = ?" for k in updates.keys()])
+    values = list(updates.values()) + [user_id]
+    sql = "UPDATE users SET " + cols + " WHERE id = ?"  # columns validated via whitelist
+    cur = db.execute(sql, values)
     db.commit()
     return cur.rowcount > 0
 

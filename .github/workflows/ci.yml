@@ -220,7 +220,7 @@ jobs:
 
       # Run only when repository-related files changed
       - name: Filter paths (Repo tests)
-        id: filter
+        id: filter_repo
         uses: dorny/paths-filter@v3
         with:
           filters: |
@@ -233,14 +233,14 @@ jobs:
               - 'requirements.txt'
 
       - name: Set up Python 3.11 (pip cache)
-        if: ${{ steps.filter.outputs.changed == 'true' }}
+        if: ${{ steps.filter_repo.outputs.changed == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
       - name: Install dependencies
-        if: ${{ steps.filter.outputs.changed == 'true' }}
+        if: ${{ steps.filter_repo.outputs.changed == 'true' }}
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -248,14 +248,16 @@ jobs:
       - name: Run pytest (tests/repository only)
         id: pytest
         continue-on-error: true
-        if: ${{ steps.filter.outputs.changed == 'true' }}
+        if: ${{ steps.filter_repo.outputs.changed == 'true' }}
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest -q tests/repository
 
       - name: Summary (Tests • Pytest repository)
         run: |
           echo "## Tests • Pytest (repository only)" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
+          if [ "${{ steps.filter_repo.outputs.changed }}" != "true" ]; then
             echo "- Skipped (no repo-related changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           s="${{ steps.pytest.outcome }}"
           echo "- pytest: $s" >> "$GITHUB_STEP_SUMMARY"

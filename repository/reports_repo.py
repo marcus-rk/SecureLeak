@@ -26,12 +26,19 @@ def list_reports(limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
 
 
 def update_report(report_id: int, **fields: Any) -> bool:
-    if not fields:
+    """Update allowed report columns using a whitelist to avoid SQL injection.
+
+    Allowed fields: title, status, severity, summary.
+    """
+    allowed = {"title", "status", "severity", "summary"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
         return False
     db = get_db()
-    cols = ", ".join([f"{k} = ?" for k in fields.keys()])
-    values = list(fields.values()) + [report_id]
-    cur = db.execute(f"UPDATE reports SET {cols} WHERE id = ?", values)
+    cols = ", ".join([f"{k} = ?" for k in updates.keys()])
+    values = list(updates.values()) + [report_id]
+    sql = "UPDATE reports SET " + cols + " WHERE id = ?"  # columns validated via whitelist
+    cur = db.execute(sql, values)
     db.commit()
     return cur.rowcount > 0
 
