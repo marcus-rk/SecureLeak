@@ -1,9 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from database.connection import get_db
 
 
-def create_comment(report_id: int, user_id: Optional[int], content: str) -> int:
+def create_comment(report_id: int, user_id: int, content: str) -> int:
     db = get_db()
     cur = db.execute(
         "INSERT INTO comments (report_id, user_id, content) VALUES (?, ?, ?)",

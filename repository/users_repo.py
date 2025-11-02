@@ -1,14 +1,13 @@
 from typing import Any, Dict, Optional
-# Optional means a value that can be of a specified type or None. Better for modularity
 
 from database.connection import get_db
 
 
-def create_user(email: str, password_hash: str, name: Optional[str] = None) -> int:
+def create_user(email: str, password_hash: str, name: Optional[str] = None, role: str = "user") -> int:
     db = get_db()
     cur = db.execute(
-        "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
-        (email, password_hash, name),
+        "INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)",
+        (email, password_hash, name, role),
     )
     db.commit()
     return cur.lastrowid

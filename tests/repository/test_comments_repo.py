@@ -1,0 +1,27 @@
+from repository.users_repo import create_user
+from repository.reports_repo import create_report
+from repository.comments_repo import (
+    create_comment,
+    list_comments_for_report,
+    delete_comment,
+)
+
+
+def test_create_and_list_comments_for_report(app):
+    with app.app_context():
+        uid = create_user("c@example.com", "hash999", name="Commenter")
+        rid = create_report("SQLi test", "public", "medium", summary="Demo")
+        cid = create_comment(rid, uid, "Looks exploitable")
+        assert isinstance(cid, int) and cid > 0
+        comments = list_comments_for_report(rid)
+        assert any(c["id"] == cid for c in comments)
+
+
+def test_delete_comment(app):
+    with app.app_context():
+        uid = create_user("d@example.com", "hash888", name="Commenter")
+        rid = create_report("Auth test", "public", "low", summary="Demo")
+        cid = create_comment(rid, uid, "Okay")
+        assert delete_comment(cid) is True
+        comments_after = list_comments_for_report(rid)
+        assert not any(c["id"] == cid for c in comments_after)
