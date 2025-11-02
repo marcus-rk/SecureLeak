@@ -15,38 +15,38 @@ const initConfirmDialogs = () => {
 const initTokenToggles = () => {
   const containers = document.querySelectorAll("[data-token-container]");
   containers.forEach((container) => {
-    const button = container.querySelector("[data-token-toggle]");
     const valueElement = container.querySelector("[data-token-value]");
-    const includeCheckbox = container.querySelector("[data-token-include]");
     const form = container.closest("form");
     const hiddenInput = form?.querySelector("input[name='csrf_token'][data-token-input]");
-    if (!button || !valueElement || !form || !hiddenInput) {
+    if (!valueElement || !form || !hiddenInput) {
       return;
     }
 
-    // Show/hide the token value only (for learning/inspection)
-    button.addEventListener("click", () => {
-      const isHidden = valueElement.hasAttribute("hidden");
-      if (isHidden) {
+    const visibilityToggle = container.querySelector("[data-token-visibility-toggle]");
+    const includeToggle = container.querySelector("[data-token-include-toggle]");
+
+    const applyVisibility = () => {
+      if (visibilityToggle?.checked) {
         valueElement.removeAttribute("hidden");
-        button.textContent = "Hide CSRF token";
       } else {
         valueElement.setAttribute("hidden", "");
-        button.textContent = "Show CSRF token";
       }
-    });
+    };
 
-    // Include/exclude the CSRF token in the form submission by toggling disabled
-    if (includeCheckbox) {
-      includeCheckbox.addEventListener("change", () => {
-        const include = includeCheckbox.checked;
-        if (include) {
-          hiddenInput.removeAttribute("disabled");
-        } else {
-          hiddenInput.setAttribute("disabled", "");
-        }
-      });
-    }
+    const applyInclusion = () => {
+      if (includeToggle?.checked) {
+        hiddenInput.removeAttribute("disabled");
+      } else {
+        hiddenInput.setAttribute("disabled", "");
+      }
+    };
+
+    visibilityToggle?.addEventListener("change", applyVisibility);
+    includeToggle?.addEventListener("change", applyInclusion);
+
+    // Initialize state once
+    applyVisibility();
+    applyInclusion();
   });
 };
 

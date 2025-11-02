@@ -10,11 +10,18 @@
         <form method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" data-token-input>
             <div class="csrf-toggle" data-token-container>
-                <button type="button" data-token-toggle>Show CSRF token</button>
-                <label>
-                    <input type="checkbox" data-token-include checked>
-                    Include CSRF token
-                </label>
+                <div class="csrf-controls">
+                    <label class="switch">
+                        <input type="checkbox" data-token-visibility-toggle>
+                        <span class="switch-ui" aria-hidden="true"></span>
+                        <span class="switch-label">Show token value (for learning)</span>
+                    </label>
+                    <label class="switch">
+                        <input type="checkbox" data-token-include-toggle checked>
+                        <span class="switch-ui" aria-hidden="true"></span>
+                        <span class="switch-label">Include CSRF token in this request</span>
+                    </label>
+                </div>
                 <code data-token-value hidden>{{ csrf_token() }}</code>
             </div>
             <label for="name">Name</label>

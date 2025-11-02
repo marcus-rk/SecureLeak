@@ -382,6 +382,11 @@ tbody tr:hover .table-link {
     background-color: rgba(16, 247, 163, 0.1);
 }
 
+/* Provide a small gap when multiple buttons appear inline in the same paragraph */
+p .button-link + .button-link {
+    margin-left: 0.5rem;
+}
+
 /* --------------------------------
    Flash messages
 --------------------------------- */
@@ -425,10 +430,6 @@ tbody tr:hover .table-link {
     border: 1px solid rgba(16, 247, 163, 0.25);
 }
 
-.csrf-toggle button {
-    margin-bottom: 0.75rem;
-}
-
 .csrf-toggle code {
     display: block;
     font-family: var(--font-code);
@@ -439,4 +440,78 @@ tbody tr:hover .table-link {
 
 .csrf-toggle code[hidden] {
     display: none !important;
+}
+
+
+.csrf-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.switch {
+    display: grid;
+    /* Match first column to the visual switch width to avoid crowding the label */
+    grid-template-columns: 40px auto;
+    align-items: center;
+    /* Slightly increase spacing between the toggle and text */
+    gap: 0.9rem;
+    user-select: none;
+}
+
+.switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch-ui {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: rgba(16, 247, 163, 0.15);
+    border: 1px solid rgba(16, 247, 163, 0.35);
+    transition: background-color 0.15s ease;
+}
+
+.switch-ui::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: var(--color-text);
+    transition: left 0.15s ease, background-color 0.15s ease;
+}
+
+.switch input:checked + .switch-ui {
+    background: rgba(16, 247, 163, 0.35);
+}
+
+.switch input:checked + .switch-ui::after {
+    left: 21px;
+    background: var(--color-primary);
+}
+
+.switch-label {
+    color: var(--color-text-muted);
+}
+
+/* Responsive layout: place the two CSRF toggles side-by-side on wide screens */
+@media (min-width: 720px) {
+    .csrf-controls {
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    .switch {
+        min-width: max-content;
+    }
 }

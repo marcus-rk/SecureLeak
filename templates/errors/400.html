@@ -4,7 +4,7 @@
         <h2>Bad request</h2>
         <p>{{ reason or 'Your request could not be processed.' }}</p>
         <p>
-            <a href="{{ url_for('auth.login') }}">Return to sign-in</a>
+            <a class="button-link" href="{{ url_for('auth.login') }}">Return to sign-in</a>
         </p>
     </section>
 {% endblock %}
