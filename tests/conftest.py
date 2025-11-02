@@ -1,6 +1,12 @@
 import os
+import sys
 import pytest
 from pathlib import Path
+
+# Ensure project root is on sys.path so "from app import create_app" works
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from app import create_app
 from database.initialize import apply as apply_migration
