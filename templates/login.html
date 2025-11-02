@@ -8,7 +8,10 @@
     <section class="auth-form">
         <h2>Login</h2>
         <form method="post" action="{{ url_for('auth.login') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" data-token-input>
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}"
+                   data-token-input>
             <div class="csrf-toggle" data-token-container>
                 <div class="csrf-controls">
                     <label class="switch">
