@@ -14,9 +14,20 @@ Defenses in this codebase:
 - CSRF
   - `CSRFProtect`: per‑session tokens; templates render `{{ csrf_token() }}`.
   - Errors mapped to HTTP 400 with a friendly explanation.
-- XSS
-  - Jinja auto‑escaping by default; no unsafe `|safe` in user content.
-  - Strict CSP via Talisman: `default-src 'self'; script-src 'self'` keeps third‑party and inline scripts out.
+- XSS (cross‑site scripting)
+  - Why it matters
+    - Attacker‑controlled HTML/JS runs in the victim’s browser and can steal sessions, perform actions, or deface pages.
+  - How we prevent it here
+    - Auto‑escaping by Jinja2: values rendered with `{{ ... }}` are HTML‑escaped (`<`, `>`, `&`, `"`, `'`) so untrusted content shows as text, not code. Flask enables this by default for `.html` templates.
+    - Avoid `|safe` on untrusted data: `|safe` disables escaping and can reintroduce XSS. Only use it on trusted, pre‑sanitized HTML.
+    - Safe JS embedding with `|tojson`: when passing data into scripts, use `const data = {{ obj|tojson }};` to avoid breaking out of strings and to escape HTML‑significant chars correctly.
+    - No inline JS or event handlers: keep JS in `static/js/main.js` and use `data-*` attributes. Our CSP blocks inline scripts and reduces XSS impact if a template slips.
+    - Attribute/URL safety: keep attributes quoted and let Jinja escape: `<a href="{{ url }}">`, `<img alt="{{ name }}">`. If URLs come from users, whitelist schemes (e.g., `https`) to avoid `javascript:` links.
+  - Defense‑in‑depth
+    - Strict CSP via Talisman: `default-src 'self'; script-src 'self'` prevents third‑party and inline scripts, limiting exploitability.
+    - HttpOnly session cookies: JS cannot read the cookie, reducing impact if any reflected XSS occurs.
+  - Limits
+    - Auto‑escape doesn’t sanitize rich HTML or URLs. If you must render HTML, sanitize server‑side first (e.g., Bleach) and only then mark safe. Use proper helpers (`tojson`, `url_for`) for JS/JSON/URLs.
 - SQL Injection
   - Repository layer uses parameterized queries (`?` placeholders) only.
   - Whitelisting column names in dynamic updates.

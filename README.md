@@ -86,68 +86,68 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 
 ```
 SecureLeak/
-├─ app.py
-├─ requirements.txt
-├─ pytest.ini
-├─ README.md
-├─ docs/
-│  ├─ project_overview.md
-│  ├─ auth.md
-│  └─ security_model.md
+├─ app.py                  # App factory: config, CSRF, security headers, blueprints, error handlers
+├─ requirements.txt        # Python dependencies
+├─ pytest.ini              # pytest configuration
+├─ README.md               # Project guide + documentation links
+├─ docs/                   
+│  ├─ project_overview.md  # Layers, dependencies, trade-offs
+│  ├─ auth.md              # Auth flow, sessions, CSRF, PRG
+│  └─ security_model.md    # Threat model and defenses
 │
-├─ database/
-│  ├─ connection.py
-│  ├─ initialize.py
+├─ database/               
+│  ├─ connection.py        # get_db()/close_db(); SQLite connection used by repositories
+│  ├─ initialize.py        # Applies migrations on first run
 │  └─ migrations/
-│     └─ init.sql
+│     └─ init.sql          # Schema: tables and indexes
 │
-├─ repository/
-│  ├─ users_repo.py
-│  ├─ reports_repo.py
-│  └─ comments_repo.py
+├─ repository/             # Data-access layer (parameterized SQL only)
+│  ├─ users_repo.py        
+│  ├─ reports_repo.py      
+│  └─ comments_repo.py     
 │
-├─ routes/
-│  ├─ auth.py
-│  └─ reports.py
+├─ routes/                 # Feature routes (Flask blueprints)
+│  ├─ auth.py              # Login, register, logout (Argon2id, CSRF, PRG)
+│  └─ reports.py           # List/view/new reports
 │
-├─ security/
-│  ├─ auth_utils.py
-│  └─ decorators.py
+├─ security/               # Security helpers and selfmade decorators
+│  ├─ auth_utils.py        # Argon2id hasher, email normalize, verify/rehash
+│  └─ decorators.py        # login_required, role checks (KISS)
 │
-├─ templates/
-│  ├─ layout.html
-│  ├─ login.html
-│  ├─ register.html
-│  ├─ reports_list.html
-│  ├─ report_detail.html
-│  ├─ report_new.html
-│  └─ errors/
-│     ├─ 400.html
-│     ├─ 404.html
-│     └─ 500.html
+├─ templates/              # Jinja2 templates (auto-escaped)
+│  ├─ layout.html          # Base layout + nav + flash messages
+│  ├─ login.html           # Auth form with CSRF token
+│  ├─ register.html        # Registration form with CSRF token
+│  ├─ reports_list.html    # Reports table
+│  ├─ report_detail.html   # Single report view
+│  ├─ report_new.html      # Create report form
+│  └─ errors/              
+│     ├─ 400.html          # Bad request (e.g., CSRF)
+│     ├─ 404.html          # Not found
+│     └─ 500.html          # Server error
 │
-├─ static/
+├─ static/                 # Front-end assets
 │  ├─ css/
-│  │  └─ style.css
+│  │  └─ style.css         
 │  ├─ js/
-│  │  └─ main.js
-│  └─ icons/
+│  │  └─ main.js           
+│  └─ icons/               
 │
-├─ tests/
-│  ├─ conftest.py
+├─ tests/                  # Pytest test-suite
+│  ├─ conftest.py          # App fixture (temp DB per run)
 │  ├─ auth/
-│  │  └─ test_login.py
+│  │  └─ test_login.py     # CSRF + login redirect checks
 │  ├─ security/
-│  │  ├─ test_headers.py
+│  │  ├─ test_headers.py   # CSP header checks
 │  │  └─ test_csp_headers.py
-│  └─ repository/
+│  └─ repository/          # Repository CRUD tests
 │     ├─ test_users_repo.py
 │     ├─ test_reports_repo.py
 │     └─ test_comments_repo.py
 │
-├─ uploads/
-└─ instance/
-   └─ logs/
+├─ uploads/                # Uploaded files (kept outside /static)
+└─ instance/               # Runtime data (DB, logs)
+  └─ logs/
 ```
 
 **How it works:**
