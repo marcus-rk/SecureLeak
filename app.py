@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template
 from flask_talisman import Talisman
 from flask_wtf import CSRFProtect
+from flask_wtf.csrf import generate_csrf
 
 from database.connection import close_db
 
@@ -54,6 +55,11 @@ def create_app() -> Flask:
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(reports_bp)
+
+    # Make csrf_token() available in all templates without requiring WTForms
+    @app.context_processor
+    def inject_csrf_token():
+        return {"csrf_token": generate_csrf}
 
     @app.route("/")
     def index() -> str:
