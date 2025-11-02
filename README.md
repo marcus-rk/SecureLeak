@@ -78,39 +78,58 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 
 ```
 secureleak/
-├─ app.py               # Main Flask app: config, CSRF, header setup, blueprint registration
-├─ db.py                # Database helper functions (connect, query, schema)
-├─ .env                 # Environment secrets (SECRET_KEY, DB path, etc.)
+├─ app.py                # Flask app: config, CSRF, security headers, blueprints, auto DB init on first run
+├─ .env                  # Env vars (SECRET_KEY, DATABASE path)
 ├─ requirements.txt      # Python dependencies
+├─ pytest.ini            # pytest configuration
 ├─ .gitignore            # Git exclusions (env, db, uploads, etc.)
 │
-├─ /routes/              # Request handlers ("controllers") organized by feature
-│   ├─ auth.py           # User register, login, logout
-│   └─ reports.py        # Create and list vulnerability reports
+├─ /database/            # Database layer
+│   ├─ connection.py     # get_db(), close_db(), init_db()
+│   ├─ initialize.py     # Apply migrations/init.sql (python -m database.initialize)
+│   └─ migrations/
+│       └─ init.sql      # Create tables + indexes
 │
-├─ /templates/           # Dynamic HTML pages rendered with Jinja2
-│   ├─ layout.html       # Base layout (shared header/nav)
-│   ├─ login.html        # Login form
-│   ├─ register.html     # Registration form
-│   ├─ reports_list.html # Shows all reports
-│   └─ report_new.html   # Form to create a new report
+├─ /repository/          # Data-access helpers (CRUD)
+│   ├─ users_repo.py     # CRUD for users table
+│   ├─ reports_repo.py   # CRUD for reports table
+│   └─ comments_repo.py  # CRUD for comments table
 │
-├─ /static/              # Front-end assets served directly
-│   ├─ css/style.css     # Styling
-│   └─ js/main.js        # Small client-side interactions
+├─ /routes/              # Feature routes (controllers)
+│   ├─ auth.py           # Login, register, logout
+│   └─ reports.py        # List/view/new reports
 │
-├─ /uploads/             # Uploaded screenshots or PoCs (not publicly served)
+├─ /templates/           # Jinja2 HTML templates
+│   ├─ layout.html
+│   ├─ login.html
+│   ├─ register.html
+│   ├─ reports_list.html
+│   ├─ report_detail.html
+│   └─ report_new.html
+│
+├─ /static/              # Front-end assets
+│   ├─ css/style.css
+│   ├─ js/main.js
+│   └─ icons/
+│
+├─ /tests/               # Test suite
+│   ├─ conftest.py
+│   ├─ auth/test_login.py
+│   └─ security/test_headers.py
+│
+├─ /uploads/             # Uploaded files (not publicly served)
 │
 └─ /instance/            # Local runtime data (SQLite DB file, dev configs)
-    └─ secureleak.sqlite
+  └─ secureleak.sqlite
 ```
 
 **How it works:**
-- `app.py` creates the Flask app and connects everything.  
-- `routes/` holds the actual URL endpoints (one file per feature).  
-- `templates/` holds the HTML that gets rendered when a route calls `render_template()`.  
-- `static/` holds CSS, JS, and images — Flask serves them directly from `/static/...`.  
-- `instance/` holds local SQLite database and other writable runtime files.  
+- `app.py` creates the Flask app, enables CSRF and security headers, registers blueprints, and auto-initializes the SQLite DB on first run.  
+- `database/` holds the SQLite connection helpers and the migration SQL.  
+- `repository/` contains small CRUD helpers that use `database.connection.get_db()`.  
+- `routes/` defines the URL endpoints per feature (auth, reports).  
+- `templates/` contains the rendered HTML pages, and `static/` serves CSS/JS/icons.  
+- `instance/` holds the SQLite database and other writable runtime files.  
 - `uploads/` stores user-uploaded files outside the static path for safety.
 
 ---
@@ -125,8 +144,8 @@ Each phase builds naturally on the previous one — simple, readable, and exam-f
 ## **Phase 1 – Setup (Skeleton)**
 
 **Feature (how):**
-- Create base files: `app.py`, `db.py`, `.env`, `requirements.txt`, `.gitignore`
-- Add folders: `routes/`, `templates/`, `static/{css,js}`, `instance/`
+- Create base files: `app.py`, `.env`, `requirements.txt`, `.gitignore`
+- Add folders: `database/` (with `migrations/`), `repository/`, `routes/`, `templates/`, `static/{css,js}`, `instance/`
 - Add base templates: `layout.html`, `index.html`
 - Static assets: `style.css`, `main.js`
 - Create a test route `/` in `app.py` or a tiny blueprint
