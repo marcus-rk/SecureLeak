@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template
 from flask_talisman import Talisman
 from flask_wtf import CSRFProtect
+
 from database.connection import close_db
 
 csrf = CSRFProtect()

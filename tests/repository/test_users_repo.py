@@ -1,9 +1,9 @@
 from repository.users_repo import (
     create_user,
-    get_user_by_id,
-    get_user_by_email,
-    update_user,
     delete_user,
+    get_user_by_email,
+    get_user_by_id,
+    update_user,
 )
 
 

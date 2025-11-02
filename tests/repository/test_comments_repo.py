@@ -1,10 +1,10 @@
-from repository.users_repo import create_user
-from repository.reports_repo import create_report
 from repository.comments_repo import (
     create_comment,
-    list_comments_for_report,
     delete_comment,
+    list_comments_for_report,
 )
+from repository.reports_repo import create_report
+from repository.users_repo import create_user
 
 
 def test_create_and_list_comments_for_report(app):
