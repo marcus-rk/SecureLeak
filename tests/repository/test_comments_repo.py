@@ -10,7 +10,7 @@ from repository.users_repo import create_user
 def test_create_and_list_comments_for_report(app):
     with app.app_context():
         uid = create_user("c@example.com", "hash999", username="Commenter")
-        rid = create_report("SQLi test", "public", "medium", summary="Demo")
+        rid = create_report(uid, "SQLi test", "Demo", "medium", "public")
         cid = create_comment(rid, uid, "Looks exploitable")
         assert isinstance(cid, int) and cid > 0, "Comment ID should be a positive integer"
         comments = list_comments_for_report(rid)
@@ -20,7 +20,7 @@ def test_create_and_list_comments_for_report(app):
 def test_delete_comment(app):
     with app.app_context():
         uid = create_user("d@example.com", "hash888", username="Commenter")
-        rid = create_report("Auth test", "public", "low", summary="Demo")
+        rid = create_report(uid, "Auth test", "Demo", "low", "public")
         cid = create_comment(rid, uid, "Okay")
         assert delete_comment(cid) is True, "Comment deletion should return True"
         comments_after = list_comments_for_report(rid)

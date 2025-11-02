@@ -5,8 +5,6 @@ from security.decorators import login_required
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/reports")
 
-# DB-backed reports: sample data removed
-
 
 @reports_bp.route("/", methods=["GET"])
 @login_required
@@ -47,6 +45,7 @@ def new_report_post() -> ResponseReturnValue:
 
 
 @reports_bp.route("/<int:report_id>", methods=["GET"])
+@login_required
 def view_report(report_id: int) -> ResponseReturnValue:
     report = reports_repo.get_report_by_id(report_id)
     if not report:
