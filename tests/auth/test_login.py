@@ -12,7 +12,7 @@ def test_home_renders_login_with_csrf(client):
 
 def test_login_without_csrf_is_blocked(client):
     # Why: Missing CSRF token should be rejected (security control is active).
-    resp = client.post("/login", data={"email": "a@b.com", "password": "x"})
+    resp = client.post("/auth/login", data={"email": "a@b.com", "password": "x"})
     assert resp.status_code in (400, 403)
 
 

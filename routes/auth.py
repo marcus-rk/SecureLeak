@@ -7,6 +7,10 @@ SECRET_KEY (see app.py). This means:
     cookie because the signature won't validate.
 - Security flags like SESSION_COOKIE_HTTPONLY and SESSION_COOKIE_SAMESITE are
     configured in app.py to harden the cookie against XSS and CSRF-by-default.
+    - SESSION_COOKIE_HTTPONLY: JavaScript cannot access the session cookie,
+      mitigating the risk of XSS attacks.
+    - SESSION_COOKIE_SAMESITE: Cookies are only sent in a first-party context,
+      reducing the risk of CSRF attacks.
 
 Why we clear() the session at login (session fixation defense):
 - If an attacker can force a victim to use a known session cookie before the
@@ -47,8 +51,6 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 _hasher = build_hasher()
 
 
-
-
 # GET: Login form page
 @auth_bp.route("/login", methods=["GET"])
 def login() -> ResponseReturnValue:
@@ -74,7 +76,7 @@ def login_post() -> ResponseReturnValue:
     _establish_session(user)
 
     flash("Signed in.", "success")
-    return redirect(url_for("reports.list_reports"))
+    return redirect(url_for("reports.list_reports"), 303)
 
 
 # GET: Registration form page
@@ -102,14 +104,14 @@ def register_post() -> ResponseReturnValue:
     # Fallback safety: ensure a non-empty name is stored
     users_repo.create_user(email=email, password_hash=pwd_hash, name=name or email, role=role)
     flash("Account created. Please sign in.", "success")
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("auth.login"), 303)
 
 # POST: Logout
 @auth_bp.route("/logout", methods=["POST"])
 def logout() -> ResponseReturnValue:
     session.clear()
     flash("Signed out.", "info")
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("auth.login"), 303)
 
 
 # --- Micro-helpers (keep routes small and readable) ---
