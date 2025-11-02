@@ -383,6 +383,39 @@ tbody tr:hover .table-link {
 }
 
 /* --------------------------------
+   Flash messages
+--------------------------------- */
+.flash-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0 0 1rem;
+}
+
+.flash {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-elevated);
+    color: var(--color-text);
+}
+
+.flash--success {
+    background-color: rgba(16, 247, 163, 0.08);
+    border-color: rgba(16, 247, 163, 0.25);
+}
+
+.flash--error {
+    background-color: rgba(255, 99, 99, 0.12);
+    border-color: rgba(255, 99, 99, 0.35);
+}
+
+.flash--info {
+    background-color: var(--color-surface-highlight);
+    border-color: var(--color-border);
+}
+
+/* --------------------------------
    CSRF token helper
 --------------------------------- */
 .csrf-toggle {
