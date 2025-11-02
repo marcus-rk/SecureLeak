@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template
 from flask_talisman import Talisman
 from flask_wtf import CSRFProtect
+from database.connection import close_db
 
 csrf = CSRFProtect()
 
@@ -29,6 +30,13 @@ def create_app() -> Flask:
 
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
+    # Auto-initialize the SQLite DB on first run.
+    db_file = Path(app.config["DATABASE"])
+    if not db_file.exists():
+        from database.initialize import apply as init_db_from_sql
+        with app.app_context():
+            init_db_from_sql()
+
     # CSRFProtect: attaches per-session tokens to all forms to prevent Cross-Site Request Forgery (CSRF) attacks.
     # Talisman: enforces secure HTTP headers (CSP, HSTS, frame and content guards) to mitigate XSS and clickjacking.
     csrf.init_app(app)
@@ -46,6 +54,9 @@ def create_app() -> Flask:
     @app.route("/")
     def index() -> str:
         return render_template("login.html")
+
+    # Ensure DB connections are closed after each request/app context
+    app.teardown_appcontext(close_db)
 
     # Initialize and return the Flask application instance
     return app
