@@ -192,7 +192,7 @@ Each phase builds naturally on the previous one — simple, readable, and exam-f
 ## **Phase 2 – Authentication (Register/Login/Logout)**
 
 **Feature (how):**
-- DB table: `users(id, email unique, password_hash, role)`
+- DB table: `users(id, email unique, username, password_hash, role)`
 - Templates: `login.html`, `register.html`
 - Routes (`routes/auth.py`):  
   - `GET/POST /register` (form → create user)  

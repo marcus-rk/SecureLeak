@@ -62,12 +62,12 @@ def register() -> ResponseReturnValue:
 def register_post() -> ResponseReturnValue:
     email = normalize_email(request.form.get("email", ""))
     password = request.form.get("password", "")
-    name = (request.form.get("name") or "").strip()
+    username = (request.form.get("username") or "").strip()
     # Security: ignore client-provided admin role in Phase 2; default to user
     role = "user"
 
-    if not name or not email or not password:
-        return _register_bad_request("Name, email and password are required.")
+    if not username or not email or not password:
+        return _register_bad_request("Username, email and password are required.")
 
     # Server-side validation: enforce minimum password length regardless of client-side HTML
     if not validate_password(password):
@@ -77,8 +77,8 @@ def register_post() -> ResponseReturnValue:
         return _register_conflict("Email already registered.")
 
     pwd_hash = _hasher.hash(password)
-    # Fallback safety: ensure a non-empty name is stored
-    users_repo.create_user(email=email, password_hash=pwd_hash, name=name or email, role=role)
+    # Fallback safety: ensure a non-empty username is stored
+    users_repo.create_user(email=email, password_hash=pwd_hash, username=username or email, role=role)
     flash("Account created. Please sign in.", "success")
     return redirect(url_for("auth.login"), 303)
 

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    name TEXT NOT NULL,
+    username TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('user','admin')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
