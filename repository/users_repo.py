@@ -4,6 +4,10 @@ from database.connection import get_db
 
 
 def create_user(email: str, password_hash: str, name: Optional[str] = None, role: str = "user") -> int:
+    """Insert a new user and return its row id.
+
+    Columns: id, email, password_hash, name, role, created_at
+    """
     db = get_db()
     cur = db.execute(
         "INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)",
@@ -14,11 +18,19 @@ def create_user(email: str, password_hash: str, name: Optional[str] = None, role
 
 
 def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
+    """Return a user row as a dict or None.
+
+    Keys: id, email, password_hash, name, role, created_at
+    """
     row = get_db().execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     return dict(row) if row else None
 
 
 def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+    """Return a user row by email as a dict or None.
+
+    Keys: id, email, password_hash, name, role, created_at
+    """
     row = get_db().execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     return dict(row) if row else None
 

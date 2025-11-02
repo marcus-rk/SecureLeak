@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-import functools
-
 from flask import (
     Blueprint,
     flash,
@@ -12,33 +8,49 @@ from flask import (
     url_for,
 )
 from flask.typing import ResponseReturnValue
-from argon2 import PasswordHasher, exceptions as argon2_exceptions
-
 from repository import users_repo
+from security.auth_utils import (
+    build_hasher,
+    maybe_upgrade_hash,
+    normalize_email,
+    verify_password,
+)
+from security.decorators import login_required
 
 auth_bp = Blueprint("auth", __name__)
 
-# Argon2 parameters: balanced for development and exam readability
-# - time_cost=3: ~3 iterations; increases CPU work
-# - memory_cost=65536: 64 MiB memory to resist GPU/ASIC cracking
-# - parallelism=2: reasonable for typical dev machines
-# - hash_len=32, salt_len=16: standard sizes
-_hasher = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2, hash_len=32, salt_len=16)
+_hasher = build_hasher()
 
 
-def _normalize_email(email: str) -> str:
-    return (email or "").strip().lower()
+# --- Micro-helpers (keep routes small and readable) ---
+
+def _render_with_flash(template: str, category: str, message: str, status: int) -> ResponseReturnValue:
+    flash(message, category)
+    return render_template(template), status
 
 
-def login_required(view):
-    @functools.wraps(view)
-    def wrapped(*args, **kwargs):
-        if not session.get("user_id"):
-            flash("Please sign in.", "info")
-            return redirect(url_for("auth.login"))
-        return view(*args, **kwargs)
+def _login_bad_request(msg: str) -> ResponseReturnValue:
+    return _render_with_flash("login.html", "error", msg, 400)
 
-    return wrapped
+
+def _login_invalid() -> ResponseReturnValue:
+    # Single path for invalid creds (no enumeration)
+    return _render_with_flash("login.html", "error", "Invalid email or password.", 401)
+
+
+def _register_bad_request(msg: str) -> ResponseReturnValue:
+    return _render_with_flash("register.html", "error", msg, 400)
+
+
+def _register_conflict(msg: str) -> ResponseReturnValue:
+    return _render_with_flash("register.html", "error", msg, 409)
+
+
+def _establish_session(user: dict) -> None:
+    session.clear()
+    session["user_id"] = user["id"]
+    if "role" in user:
+        session["role"] = user["role"]
 
 
 # GET: Login form page
@@ -50,34 +62,20 @@ def login() -> ResponseReturnValue:
 # POST: Login Authentication
 @auth_bp.route("/login", methods=["POST"])
 def login_post() -> ResponseReturnValue:
-    email = _normalize_email(request.form.get("email", ""))
+    email = normalize_email(request.form.get("email", ""))
     password = request.form.get("password", "")
 
     if not email or not password:
-        flash("Email and password are required.", "error")
-        return render_template("login.html"), 400
+        return _login_bad_request("Email and password are required.")
 
     user = users_repo.get_user_by_email(email)
-    try:
-        if not user or not _hasher.verify(user["password_hash"], password):
-            raise argon2_exceptions.VerifyMismatchError
-    except Exception:
-        # Treat all failures as generic invalid credentials (no enumeration)
-        flash("Invalid email or password.", "error")
-        return render_template("login.html"), 401
+    if not user or not verify_password(_hasher, user["password_hash"], password):
+        return _login_invalid()
 
-    # Optional: upgrade hash transparently
-    try:
-        if _hasher.check_needs_rehash(user["password_hash"]):
-            users_repo.update_user(user["id"], password_hash=_hasher.hash(password))
-    except Exception:
-        pass  # non-fatal
+    maybe_upgrade_hash(_hasher, user, password, users_repo.update_user)
 
     # Prevent session fixation and set identity
-    session.clear()
-    session["user_id"] = user["id"]
-    if "role" in user:
-        session["role"] = user["role"]
+    _establish_session(user)
 
     flash("Signed in.", "success")
     return redirect(url_for("reports.list_reports"))
@@ -92,19 +90,17 @@ def register() -> ResponseReturnValue:
 # POST: Create account
 @auth_bp.route("/register", methods=["POST"])
 def register_post() -> ResponseReturnValue:
-    email = _normalize_email(request.form.get("email", ""))
+    email = normalize_email(request.form.get("email", ""))
     password = request.form.get("password", "")
     name = (request.form.get("name") or "").strip()
     # Security: ignore client-provided admin role in Phase 2; default to user
     role = "user"
 
     if not name or not email or not password:
-        flash("Name, email and password are required.", "error")
-        return render_template("register.html"), 400
+        return _register_bad_request("Name, email and password are required.")
 
     if users_repo.get_user_by_email(email):
-        flash("Email already registered.", "error")
-        return render_template("register.html"), 409
+        return _register_conflict("Email already registered.")
 
     pwd_hash = _hasher.hash(password)
     # Fallback safety: ensure a non-empty name is stored
