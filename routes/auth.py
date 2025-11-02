@@ -75,9 +75,13 @@ def register_post() -> ResponseReturnValue:
     # Server-side validation: enforce minimum password length regardless of client-side HTML
     if not validate_password(password):
         return _register_bad_request("Password must be at least 8 characters.")
-
+    
+    # Check for existing email or username to avoid duplicates
     if users_repo.get_user_by_email(email):
         return _register_conflict("Email already registered.")
+
+    if users_repo.get_user_by_username(username):
+        return _register_conflict("Username already taken.")
 
     pwd_hash = _hasher.hash(password)
     # Fallback safety: ensure a non-empty username is stored

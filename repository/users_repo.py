@@ -35,6 +35,15 @@ def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
     return dict(row) if row else None
 
 
+def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
+    """Return a user row by username (case-insensitive) or None."""
+    row = get_db().execute(
+        "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
+        (username,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
 def update_user(user_id: int, **fields: Any) -> bool:
     """Update allowed user columns using a whitelist to avoid SQL injection.
 
