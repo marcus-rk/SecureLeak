@@ -18,14 +18,14 @@ def test_login_without_csrf_is_blocked(client):
 
 def test_login_with_csrf_redirects_to_reports(client):
     # Why: With a valid token, login flow should succeed and redirect.
-    get_resp = client.get("/login")
+    get_resp = client.get("/auth/login")
     html = get_resp.get_data(as_text=True)
     m = re.search(r'name="csrf_token"\s+value="([^"]+)"', html)
     assert m, "CSRF token not found in login form"
     token = m.group(1)
 
     post_resp = client.post(
-        "/login",
+        "/auth/login",
         data={
             "email": "user@example.com",
             "password": "secret",

@@ -1,3 +1,28 @@
+"""
+Authentication routes and session handling.
+
+Flask sessions are cookie-based and cryptographically signed using the app's
+SECRET_KEY (see app.py). This means:
+- The session lives in a client cookie, but Flask will reject any tampered
+    cookie because the signature won't validate.
+- Security flags like SESSION_COOKIE_HTTPONLY and SESSION_COOKIE_SAMESITE are
+    configured in app.py to harden the cookie against XSS and CSRF-by-default.
+
+Why we clear() the session at login (session fixation defense):
+- If an attacker can force a victim to use a known session cookie before the
+    victim logs in, and the app reuses that same session after authentication,
+    the attacker might be able to "fix" the victim's session identity.
+- By calling session.clear() immediately before setting the authenticated
+    identity, we drop any pre-existing (possibly attacker-influenced) data and
+    start a fresh, minimal identity. With Flask's cookie sessions, this is the
+    canonical, framework-supported way to rotate session state at auth boundaries.
+
+Relationship to CSRF:
+- Flask-WTF issues CSRF tokens that are tied to the user's session. Clearing
+    the session ensures stale tokens (from a pre-auth state) won't carry over
+    after login, which is desirable at an auth boundary.
+"""
+
 from flask import (
     Blueprint,
     flash,
@@ -17,40 +42,11 @@ from security.auth_utils import (
 )
 from security.decorators import login_required
 
-auth_bp = Blueprint("auth", __name__)
+auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 _hasher = build_hasher()
 
 
-# --- Micro-helpers (keep routes small and readable) ---
-
-def _render_with_flash(template: str, category: str, message: str, status: int) -> ResponseReturnValue:
-    flash(message, category)
-    return render_template(template), status
-
-
-def _login_bad_request(msg: str) -> ResponseReturnValue:
-    return _render_with_flash("login.html", "error", msg, 400)
-
-
-def _login_invalid() -> ResponseReturnValue:
-    # Single path for invalid creds (no enumeration)
-    return _render_with_flash("login.html", "error", "Invalid email or password.", 401)
-
-
-def _register_bad_request(msg: str) -> ResponseReturnValue:
-    return _render_with_flash("register.html", "error", msg, 400)
-
-
-def _register_conflict(msg: str) -> ResponseReturnValue:
-    return _render_with_flash("register.html", "error", msg, 409)
-
-
-def _establish_session(user: dict) -> None:
-    session.clear()
-    session["user_id"] = user["id"]
-    if "role" in user:
-        session["role"] = user["role"]
 
 
 # GET: Login form page
@@ -74,7 +70,7 @@ def login_post() -> ResponseReturnValue:
 
     maybe_upgrade_hash(_hasher, user, password, users_repo.update_user)
 
-    # Prevent session fixation and set identity
+    # Session fixation defense and identity establishment
     _establish_session(user)
 
     flash("Signed in.", "success")
@@ -114,3 +110,43 @@ def logout() -> ResponseReturnValue:
     session.clear()
     flash("Signed out.", "info")
     return redirect(url_for("auth.login"))
+
+
+# --- Micro-helpers (keep routes small and readable) ---
+
+def _render_with_flash(template: str, category: str, message: str, status: int) -> ResponseReturnValue:
+    """Flash a message, then render the template with the given HTTP status."""
+    flash(message, category)
+    return render_template(template), status
+
+
+def _login_bad_request(msg: str) -> ResponseReturnValue:
+    """400 for missing/invalid login form fields."""
+    return _render_with_flash("login.html", "error", msg, 400)
+
+
+def _login_invalid() -> ResponseReturnValue:
+    """401 for wrong credentials; single path to avoid user enumeration."""
+    return _render_with_flash("login.html", "error", "Invalid email or password.", 401)
+
+
+def _register_bad_request(msg: str) -> ResponseReturnValue:
+    """400 for missing/invalid registration fields."""
+    return _render_with_flash("register.html", "error", msg, 400)
+
+
+def _register_conflict(msg: str) -> ResponseReturnValue:
+    """409 when the email is already registered."""
+    return _render_with_flash("register.html", "error", msg, 409)
+
+
+def _establish_session(user: dict) -> None:
+    """Reset session (fixation defense) and set minimal identity (user_id, role).
+    Sessions are signed cookies; HttpOnly/SameSite flags are set in app.py.
+    """
+    # Drop any pre-auth or attacker-influenced keys before we set identity
+    session.clear()
+    # Minimal identity: who the user is and, optionally, their role
+    session["user_id"] = user["id"]
+    if "role" in user:
+        session["role"] = user["role"]

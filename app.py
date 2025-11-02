@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template
 from flask_talisman import Talisman
 from flask_wtf import CSRFProtect
-from flask_wtf.csrf import generate_csrf
+from flask_wtf.csrf import generate_csrf, CSRFError
 
 from database.connection import close_db
 
@@ -60,6 +60,23 @@ def create_app() -> Flask:
     @app.context_processor
     def inject_csrf_token():
         return {"csrf_token": generate_csrf}
+
+    # --- Error handlers: consistent user-friendly pages ---
+    # 404: Not Found – show a simple page instead of the default Werkzeug response
+    @app.errorhandler(404)
+    def not_found(_e):
+        return render_template("errors/404.html"), 404
+
+    # 500: Internal Server Error – generic message; avoid leaking stack traces
+    @app.errorhandler(500)
+    def internal_error(_e):
+        return render_template("errors/500.html"), 500
+
+    # 400 (CSRF): Invalid/missing CSRF tokens map to a clear, non-technical message
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e: CSRFError):
+        reason = getattr(e, "description", "Invalid or missing CSRF token")
+        return render_template("errors/400.html", reason=reason), 400
 
     @app.route("/")
     def index() -> str:

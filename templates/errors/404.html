@@ -1,0 +1,8 @@
+{% extends 'layout.html' %}
+{% block content %}
+  <section>
+    <h2>Page not found</h2>
+    <p>The page you’re looking for doesn’t exist or has moved.</p>
+    <p><a href="{{ url_for('reports.list_reports') }}">Go to Reports</a> or <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+  </section>
+{% endblock %}
