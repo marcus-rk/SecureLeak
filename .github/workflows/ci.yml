@@ -36,6 +36,7 @@ jobs:
   python-lint:
     name: Python • Ruff
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,7 +47,7 @@ jobs:
       # Paths-filter sets outputs we can branch on. If nothing relevant
       # changed, we skip the expensive steps and summarize as "Skipped".
       - name: Filter paths (Python)
-        id: filter
+        id: filter_python
         uses: dorny/paths-filter@v3
         with:
           filters: |
@@ -58,7 +59,7 @@ jobs:
       # The cache reuses downloaded wheels between runs to speed up pip installs.
       # Sticking to one Python version maximizes cache hit rate.
       - name: Set up Python 3.11 (pip cache)
-        if: ${{ steps.filter.outputs.changed == 'true' }}
+        if: ${{ steps.filter_python.outputs.changed == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -67,14 +68,14 @@ jobs:
       # Pin versions for reproducibility and stable annotations.
       # Tip: update periodically to pick up new rules/perf.
       - name: Install Ruff (pinned)
-        if: ${{ steps.filter.outputs.changed == 'true' }}
+        if: ${{ steps.filter_python.outputs.changed == 'true' }}
         run: pip install "ruff==0.5.7"
 
       # Auto-fix imports/format; final verify emits GitHub annotations
       - name: Ruff (auto-fix, then verify)
         id: ruff
         continue-on-error: true
-        if: ${{ steps.filter.outputs.changed == 'true' }}
+        if: ${{ steps.filter_python.outputs.changed == 'true' }}
         run: |
           ruff check . --fix
           ruff format .
@@ -88,7 +89,7 @@ jobs:
       - name: Summary (Python • Ruff)
         run: |
           echo "## Python • Ruff" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
+          if [ "${{ steps.filter_python.outputs.changed }}" != "true" ]; then
             echo "- Skipped (no Python changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           s="${{ steps.ruff.outcome }}"
           echo "- Ruff: $s" >> "$GITHUB_STEP_SUMMARY"
@@ -100,6 +101,7 @@ jobs:
   template-lint:
     name: Templates • djLint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -147,6 +149,7 @@ jobs:
   security-audit:
     name: Security • Bandit & pip-audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -207,49 +210,53 @@ jobs:
         # We fail the job if either Bandit or pip-audit found issues serious
         # enough to set a failure. The summary always shows both results.
 
-  # tests:
-  #   name: Tests • Pytest
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  tests-repository:
+    name: Tests • Pytest (repository only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Filter paths (Tests)
-  #       id: filter
-  #       uses: dorny/paths-filter@v3
-  #       with:
-  #         filters: |
-  #           changed:
-  #             - '**/*.py'
-  #             - 'tests/**'
-  #             - 'pytest.ini'
+      # Run only when repository-related files changed
+      - name: Filter paths (Repo tests)
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            changed:
+              - 'repository/**'
+              - 'database/**'
+              - 'app.py'
+              - 'tests/repository/**'
+              - 'pytest.ini'
+              - 'requirements.txt'
 
-  #     - name: Set up Python 3.11 (pip cache)
-  #       if: ${{ steps.filter.outputs.changed == 'true' }}
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.11"
-  #         cache: "pip"
+      - name: Set up Python 3.11 (pip cache)
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
 
-  #     - name: Install dependencies
-  #       if: ${{ steps.filter.outputs.changed == 'true' }}
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         pip install -r requirements.txt
-  #         pip install "pytest==8.2.2"
+      - name: Install dependencies
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-  #     - name: Run tests (pytest)
-  #       id: pytest
-  #       continue-on-error: true
-  #       if: ${{ steps.filter.outputs.changed == 'true' }}
-  #       run: |
-  #         pytest -q
+      - name: Run pytest (tests/repository only)
+        id: pytest
+        continue-on-error: true
+        if: ${{ steps.filter.outputs.changed == 'true' }}
+        run: |
+          pytest -q tests/repository
 
-  #     - name: Summary (Tests • Pytest)
-  #       run: |
-  #         echo "## Tests • Pytest" >> "$GITHUB_STEP_SUMMARY"
-  #         if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
-  #           echo "- Skipped (no relevant changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
-  #         s="${{ steps.pytest.outcome }}"
-  #         echo "- pytest: $s" >> "$GITHUB_STEP_SUMMARY"
-  #         [ "$s" = "failure" ] && exit 1 || exit 0
+      - name: Summary (Tests • Pytest repository)
+        run: |
+          echo "## Tests • Pytest (repository only)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
+            echo "- Skipped (no repo-related changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          s="${{ steps.pytest.outcome }}"
+          echo "- pytest: $s" >> "$GITHUB_STEP_SUMMARY"
+          [ "$s" = "failure" ] && exit 1 || exit 0
