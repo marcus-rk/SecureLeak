@@ -15,14 +15,14 @@ CREATE TABLE IF NOT EXISTS reports (
     title TEXT NOT NULL,
     status TEXT NOT NULL,
     severity TEXT NOT NULL,
-    summary TEXT,
+    summary TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     report_id INTEGER NOT NULL,
-    user_id INTEGER,
+    user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
