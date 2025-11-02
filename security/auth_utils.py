@@ -38,3 +38,12 @@ def maybe_upgrade_hash(
             update_fn(user_row["id"], password_hash=new_hash)  # type: ignore[arg-type]
     except Exception:
         return
+
+
+def validate_password(password: str, min_len: int = 8) -> bool:
+    """Return True if password meets minimal rules; False otherwise."""
+    if not isinstance(password, str):
+        return False
+    if len(password) < min_len:
+        return False
+    return True

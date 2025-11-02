@@ -14,6 +14,7 @@ from security.auth_utils import (
     maybe_upgrade_hash,
     normalize_email,
     verify_password,
+    validate_password,
 )
 from security.decorators import login_required
 
@@ -67,6 +68,10 @@ def register_post() -> ResponseReturnValue:
 
     if not name or not email or not password:
         return _register_bad_request("Name, email and password are required.")
+
+    # Server-side validation: enforce minimum password length regardless of client-side HTML
+    if not validate_password(password):
+        return _register_bad_request("Password must be at least 8 characters.")
 
     if users_repo.get_user_by_email(email):
         return _register_conflict("Email already registered.")

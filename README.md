@@ -173,7 +173,7 @@ Each phase builds naturally on the previous one — simple, readable, and exam-f
 **Feature (how):**
 - Create base files: `app.py`, `.env`, `requirements.txt`, `.gitignore`
 - Add folders: `database/` (with `migrations/`), `repository/`, `routes/`, `templates/`, `static/{css,js}`, `instance/`
-- Add base templates: `layout.html`, `index.html`
+- Add base templates: `layout.html`
 - Static assets: `style.css`, `main.js`
 - Create a test route `/` in `app.py` or a tiny blueprint
 
