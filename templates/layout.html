@@ -21,13 +21,18 @@
         <header>
             <h1>SecureLeak</h1>
             <nav>
-                <a href="{{ url_for('reports.list_reports') }}">Reports</a>
-                <a href="{{ url_for('reports.new_report') }}">New Report</a>
-                <a href="{{ url_for('auth.login') }}">Login</a>
-                <form action="{{ url_for('auth.logout') }}" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit">Logout</button>
-                </form>
+                {# Show different nav items based on authentication state #}
+                {% if session.get('user_id') %}
+                    <a href="{{ url_for('reports.list_reports') }}">Reports</a>
+                    <a href="{{ url_for('reports.new_report') }}">New Report</a>
+                    <form action="{{ url_for('auth.logout') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}">Login</a>
+                    <a href="{{ url_for('auth.register') }}">Register</a>
+                {% endif %}
             </nav>
         </header>
         <main>
