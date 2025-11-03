@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="reports card">
+    <h2>Admin Dashboard</h2>
+    {% if reports and reports|length > 0 %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Owner</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reports %}
+                    <tr>
+                        <td>{{ r.id }}</td>
+                        <td>{{ r.title }}</td>
+                        <td>{{ r.owner_username or 'Unknown' }}</td>
+                        <td>{{ r.status }}</td>
+                        <td>
+                            <div class="actions">
+                                <form method="post" action="{{ url_for('admin.update_report_status', report_id=r.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="status" value="public">
+                                    <button type="submit">Make public</button>
+                                </form>
+                                <form method="post" action="{{ url_for('admin.update_report_status', report_id=r.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="status" value="private">
+                                    <button type="submit">Make private</button>
+                                </form>
+                                <form method="post" action="{{ url_for('admin.update_report_status', report_id=r.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="status" value="closed">
+                                    <button type="submit">Close</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">No reports found.</p>
+    {% endif %}
+</section>
+{% endblock %}

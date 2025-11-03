@@ -52,9 +52,11 @@ def create_app() -> Flask:
 
     from routes.auth import auth_bp
     from routes.reports import reports_bp
+    from routes.admin import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(admin_bp)
 
     # Make csrf_token() available in all templates without requiring WTForms
     @app.context_processor

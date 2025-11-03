@@ -63,3 +63,33 @@ def delete_report(report_id: int) -> bool:
     cur = db.execute("DELETE FROM reports WHERE id = ?", (report_id,))
     db.commit()
     return cur.rowcount > 0
+
+
+def update_status(report_id: int, status: str) -> bool:
+    """Update only the status field with a strict whitelist.
+
+    Allowed values: public, private, closed.
+    Returns True if a row was updated.
+    """
+    allowed = {"public", "private", "closed"}
+    if status not in allowed:
+        return False
+    db = get_db()
+    cur = db.execute("UPDATE reports SET status = ? WHERE id = ?", (status, report_id))
+    db.commit()
+    return cur.rowcount > 0
+
+
+def list_all(limit: int = 200, offset: int = 0) -> List[Dict[str, Any]]:
+    """List all reports for admin dashboard, newest first.
+    Includes owner username for context.
+    """
+    rows = get_db().execute(
+        (
+            "SELECT r.*, u.username AS owner_username "
+            "FROM reports r LEFT JOIN users u ON u.id = r.owner_id "
+            "ORDER BY r.created_at DESC LIMIT ? OFFSET ?"
+        ),
+        (limit, offset),
+    ).fetchall()
+    return [dict(r) for r in rows]

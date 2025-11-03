@@ -407,8 +407,8 @@ Add lightweight commenting to report details, matching the current blueprint str
 | `GET` | `/reports/<id>` | View single report |
 | `POST` | `/reports/<id>/comment` | Add comment |
 | `GET` | `/reports/<id>/image/<name>` | Serve uploaded file (auth checked) |
-| `GET/POST` | `/admin` | Admin dashboard |
-| `POST` | `/admin/import` | Import XML/JSON report data |
+| `GET` | `/admin` | Admin dashboard (list all reports) |
+| `POST` | `/admin/reports/<id>/status` | Change status to public/private/closed |
 
 ---
 

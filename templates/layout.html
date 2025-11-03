@@ -25,6 +25,9 @@
                 {% if session.get('user_id') %}
                     <a href="{{ url_for('reports.list_reports') }}">Reports</a>
                     <a href="{{ url_for('reports.new_report') }}">New Report</a>
+                    {% if session.get('role') == 'admin' %}
+                        <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+                    {% endif %}
                     <form action="{{ url_for('auth.logout') }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit">Logout</button>
