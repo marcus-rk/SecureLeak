@@ -30,7 +30,6 @@
                     </div>
                 </dl>
             </div>
-
             <div class="report-description">
                 <h3>Description</h3>
                 <p>{{ report.description }}</p>
@@ -38,7 +37,8 @@
         </div>
         {% if report.image_name %}
             <div class="report-attachment">
-                <img src="{{ url_for('reports.report_file', report_id=report.id, name=report.image_name) }}" alt="Attachment">
+                <img src="{{ url_for('reports.report_file', report_id=report.id, name=report.image_name) }}"
+                     alt="Attachment">
             </div>
         {% endif %}
         <section class="comments card">
@@ -61,7 +61,9 @@
             {% endif %}
 
             {% if session.get('user_id') %}
-                <form action="{{ url_for('reports.add_comment', report_id=report.id) }}" method="post" class="comment-form">
+                <form action="{{ url_for('reports.add_comment', report_id=report.id) }}"
+                      method="post"
+                      class="comment-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <label for="comment-body">Add a comment</label>
                     <textarea id="comment-body" name="body" rows="4" maxlength="2000" required></textarea>
@@ -70,7 +72,9 @@
                     </div>
                 </form>
             {% else %}
-                <p><a class="button-link" href="{{ url_for('auth.login') }}">Login</a> to post a comment.</p>
+                <p>
+                    <a class="button-link" href="{{ url_for('auth.login') }}">Login</a> to post a comment.
+                </p>
             {% endif %}
         </section>
         <div class="actions actions--end">
