@@ -167,11 +167,13 @@ section.auth-form p a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem 1rem;
+    padding: 0.7rem 1.2rem; /* larger tap target */
+    min-height: 40px;      /* ensure comfortable height */
     border: 1px solid var(--color-primary);
-    border-radius: 6px;
+    border-radius: 8px;    /* slightly rounder */
     background-color: transparent;
     color: var(--color-primary);
+    font-size: 1rem;       /* slightly larger text */
     font-weight: 600;
     letter-spacing: 0.01em;
     cursor: pointer;
@@ -285,6 +287,15 @@ section.reports form {
     font-weight: 600;
     color: var(--color-primary);
 }
+
+/* Inline action rows for aligning buttons/links */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.actions--end { justify-content: flex-end; }
+.actions--center { justify-content: center; }
 
 /* --------------------------------
    Report attachments (images)
@@ -407,6 +418,45 @@ tbody tr:hover .table-link {
     overflow-wrap: anywhere;
     word-break: break-word;
     hyphens: auto;
+}
+
+/* --------------------------------
+   Comments (Phase 5)
+--------------------------------- */
+.comments {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.comment-list {
+    /* Reduce default list margin and add comfortable spacing between items */
+    margin-block: 0.25rem 0.75rem;
+    padding-inline-start: 1.25rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.comment__meta {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.comment__body {
+    /* Preserve newlines and spaces from plain text without risking XSS */
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Buttons/links inside cards shouldn't stretch full width */
+.card > :where(button, .button-link) {
+    align-self: flex-start;
+}
+
+/* And buttons/links inside forms within cards should stay compact too */
+.card form :where(button, .button-link) {
+    align-self: flex-start;
 }
 
 /* Provide a small gap when multiple buttons appear inline in the same paragraph */

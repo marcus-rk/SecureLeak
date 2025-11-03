@@ -5,7 +5,6 @@ from typing import Optional
 from flask import (
     Blueprint,
     abort,
-    current_app,
     flash,
     redirect,
     render_template,
@@ -16,6 +15,7 @@ from flask import (
 )
 from flask.typing import ResponseReturnValue
 from repository import reports_repo
+from repository import comments_repo
 from security.decorators import login_required
 from security.reports_access import is_report_viewable
 from security.uploads import (
@@ -100,7 +100,30 @@ def view_report(report_id: int) -> ResponseReturnValue:
     uid = session.get("user_id")
     if not is_report_viewable(report, uid):
         abort(404)
-    return render_template("report_detail.html", report=report), 200
+    comments = comments_repo.list_comments_for_report(report_id)
+    return render_template("report_detail.html", report=report, comments=comments), 200
+
+
+@reports_bp.route("/<int:report_id>/comment", methods=["POST"])
+@login_required
+def add_comment(report_id: int) -> ResponseReturnValue:
+    report = reports_repo.get_report_by_id(report_id)
+    if not report:
+        abort(404)
+    uid = session.get("user_id")
+    if not is_report_viewable(report, uid):
+        # Preserve info-hiding policy
+        abort(404)
+
+    body = (request.form.get("body") or "").strip()
+    if not body or len(body) > 2000:
+        flash("Comment must be between 1 and 2000 characters.", "error")
+        comments = comments_repo.list_comments_for_report(report_id)
+        return render_template("report_detail.html", report=report, comments=comments), 400
+
+    comments_repo.create_comment(report_id, uid, body)
+    flash("Comment posted.", "success")
+    return redirect(url_for("reports.view_report", report_id=report_id), 303)
 
 
 @reports_bp.route("/<int:report_id>/image/<path:name>", methods=["GET"])  # New, clearer path
@@ -108,6 +131,7 @@ def view_report(report_id: int) -> ResponseReturnValue:
 @login_required
 def report_file(report_id: int, name: str) -> ResponseReturnValue:
     report = reports_repo.get_report_by_id(report_id)
+
     if not report:
         abort(404)
     # Visibility: same rule as detail

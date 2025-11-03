@@ -12,7 +12,6 @@ from repository import users_repo
 from security.auth_utils import (
     build_hasher,
     maybe_upgrade_hash,
-    normalize_email,
     normalize_and_validate_email,
     verify_password,
     validate_password,
@@ -91,6 +90,7 @@ def register_post() -> ResponseReturnValue:
 
 # POST: Logout
 @auth_bp.route("/logout", methods=["POST"])
+@login_required
 def logout() -> ResponseReturnValue:
     session.clear()
     flash("Signed out.", "info")

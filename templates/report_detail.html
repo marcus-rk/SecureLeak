@@ -41,6 +41,40 @@
                 <img src="{{ url_for('reports.report_file', report_id=report.id, name=report.image_name) }}" alt="Attachment">
             </div>
         {% endif %}
-        <a class="button-link" href="{{ url_for('reports.list_reports') }}">Back to reports</a>
+        <section class="comments card">
+            <h3>Comments</h3>
+            {% if comments and comments|length > 0 %}
+                <ul class="comment-list">
+                    {% for c in comments %}
+                        <li class="comment">
+                            <div class="comment__meta">
+                                <strong>{{ c.author_username or 'Deleted user' }}</strong>
+                                <span>•</span>
+                                <time datetime="{{ c.created_at }}">{{ c.created_at }}</time>
+                            </div>
+                            <div class="comment__body">{{ c.content }}</div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="muted">No comments yet.</p>
+            {% endif %}
+
+            {% if session.get('user_id') %}
+                <form action="{{ url_for('reports.add_comment', report_id=report.id) }}" method="post" class="comment-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label for="comment-body">Add a comment</label>
+                    <textarea id="comment-body" name="body" rows="4" maxlength="2000" required></textarea>
+                    <div>
+                        <button type="submit">Post comment</button>
+                    </div>
+                </form>
+            {% else %}
+                <p><a class="button-link" href="{{ url_for('auth.login') }}">Login</a> to post a comment.</p>
+            {% endif %}
+        </section>
+        <div class="actions actions--end">
+            <a class="button-link" href="{{ url_for('reports.list_reports') }}">Back to reports</a>
+        </div>
     </section>
 {% endblock %}

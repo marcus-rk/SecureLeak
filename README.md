@@ -264,20 +264,75 @@ Each phase builds naturally on the previous one — simple, readable, and exam-f
 
 ## **Phase 5 – Comments (Discussion)**
 
+Add lightweight commenting to report details, matching the current blueprint structure, PRG pattern, CSRF, and authorization helpers.
+
 **Feature (how):**
-- DB: `comments(id, report_id, author_id, body, created_at)`
-- Template: add comment section in `report_detail.html`
-- Route: `POST /reports/<id>/comment` (insert → redirect)
+1) Schema (SQLite)
+   - Table `comments` with minimal fields:
+     - `id` INTEGER PRIMARY KEY AUTOINCREMENT
+     - `report_id` INTEGER NOT NULL
+     - `author_id` INTEGER NOT NULL
+     - `body` TEXT NOT NULL
+     - `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+   - Index: `CREATE INDEX idx_comments_report_created ON comments(report_id, created_at);`
+   - Foreign keys (documented, optional to enforce now): `report_id → reports.id`, `author_id → users.id`.
+
+2) Repository layer (`repository/comments_repo.py`)
+   - `create_comment(report_id: int, author_id: int, body: str) -> int`
+   - `list_comments_for_report(report_id: int) -> list[dict]` (ORDER BY created_at ASC)
+   - Keep I/O tiny and parameterized (same style as other repos).
+
+3) Routes (extend `routes/reports.py`)
+   - Read path (no new route): reuse existing `GET /reports/<id>`; fetch comments and pass to template.
+   - Write path: `POST /reports/<id>/comment`
+     - `@login_required`
+     - Load report → 404 if missing
+     - Visibility check: if the report is not viewable by this user, 404
+     - Comment policy (KISS): allow posting when report is public or user is the owner (private)
+     - Validate body: `body = (request.form.get("body") or "").strip()`; require 1..2000 chars
+     - Insert via repo, flash success, PRG redirect `303` back to `reports.view_report`
+     - On validation error: flash + render detail with 400 (keep form state), or redirect with message
+
+4) Template (`templates/report_detail.html`)
+   - Comments list (above the attachment, below description):
+     - Show author username and timestamp; body auto-escaped (no `|safe`)
+     - Empty state: “No comments yet.”
+   - Comment form (below list):
+     - `method="post" action="/reports/{{ id }}/comment"`
+     - Hidden CSRF token `{{ csrf_token() }}`
+     - `<textarea name="body" required rows="4" maxlength="2000"></textarea>`
+     - Submit button; follow existing button styles
+   - Keep structure consistent with `.card` and existing tokens; no inline JS
+
+5) Styling (reuse, keep KISS)
+   - Reuse existing `.card`, typography, and button styles; optionally add a tiny block:
+     - `.comments { display: flex; flex-direction: column; gap: .75rem; }`
+     - `.comment__meta { font-size: .875rem; color: var(--color-text-muted); }`
+   - Only add if needed visually; otherwise rely on defaults.
 
 **Security (what/why/how):**
-- XSS: auto-escape comment text
-- CSRF token in comment form
-- Authorization: only authenticated users; only owners/admins for private reports
+- XSS: rely on Jinja auto-escaping; do not mark comment text as safe; no HTML allowed
+- CSRF: include `{{ csrf_token() }}` in the form; handled globally by Flask-WTF
+- Authorization: use the same visibility rule as detail
+  - Private reports: only owner may view and comment (others get 404)
+  - Public reports: any authenticated user may view and comment
+- Abuse caps: trim input; 1..2000 chars; ignore extraneous client fields
+- PRG: use 303 after successful POST to avoid double-submits
+
+**Testing (add to `tests/`)**
+- Repository tests (`tests/repository/test_comments_repo.py`): create/list ordering
+- Route tests (`tests/reports/test_comments.py`):
+  - 303 on successful post; comment appears on detail page
+  - 400 on empty/too-long body with flash
+  - 404 when posting to a private report you do not own
+  - CSRF: missing token → 400 (uses same HTTPS/Referer pattern)
 
 **Done when:**
-- Comments display correctly
-- `<script>` tags render as text, not run
-- Missing CSRF token blocks submission
+- Comments render under report description in chronological order
+- Posting to public reports (signed-in) and own private reports works
+- `<script>` tags show as text; no HTML executes
+- Missing/invalid CSRF returns friendly 400
+- Redirect-after-post prevents duplicate submissions
 
 ---
 

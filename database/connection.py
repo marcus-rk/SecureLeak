@@ -17,6 +17,8 @@ def get_db() -> sqlite3.Connection:
         db_path = Path(current_app.config["DATABASE"])
         db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(db_path)
+        # Enforce relational integrity on SQLite (off by default per-connection)
+        conn.execute("PRAGMA foreign_keys = ON;")
         conn.row_factory = sqlite3.Row
         g.db = conn
     return g.db
