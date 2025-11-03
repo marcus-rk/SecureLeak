@@ -1,0 +1,25 @@
+Can you share exact steps to reproduce?
+Repro’d on v1.2.3.
+Patched in commit abc123.
+Please retest in staging.
+Severity seems high due to auth bypass.
+Let’s add server-side validation here.
+I can’t reproduce on my machine—details?
+Stack trace attached in logs.
+This should be private until fixed.
+Impacts all tenants in EU region.
+Let’s limit scope to GET endpoints for now.
+QA confirms fix on build 457.
+Consider escaping output in template.
+Can we add rate limiting to this route?
+Duplicate of ticket #142?
+I updated the CSP to include img-src data:.
+This breaks older clients; need fallback.
+Add unit tests to prevent regression.
+We should backport to v1.1.
+I’ll write a migration for constraints.
+Deployed to staging—verify please.
+Looks like path normalization is missing.
+Handle unicode properly to avoid errors.
+Add monitoring for repeated failures.
+Thanks for reporting this.

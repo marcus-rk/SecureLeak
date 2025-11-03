@@ -1,0 +1,36 @@
+Steps to reproduce:
+1. Go to the affected endpoint.
+2. Provide the crafted input.
+
+Expected vs actual:
+- Expected: input is validated and rejected.
+- Actual: input is accepted and executed.
+
+Impact:
+- Allows unauthorized access to sensitive data.
+- Can lead to account takeover.
+
+Affected version:
+- Observed on v1.2.3 and v1.2.4.
+
+Mitigation:
+- Apply input validation on the server side.
+- Use parameterized queries.
+- Add CSRF tokens to all state-changing forms.
+
+Notes:
+- Reproduces consistently
+- Intermittent under load
+- Requires authenticated user
+- Works for guest users as well
+- Payloads included below
+- See attached screenshot
+- Confirmed by QA
+- Needs triage
+- Needs severity review
+- Cross-team required fix
+- Regression from last release
+- Consider adding WAF rules
+- Include sanitization library
+- Review error handling
+- Update documentation

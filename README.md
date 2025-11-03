@@ -424,6 +424,15 @@ flask --app app run --debug
 ```
 
 App runs on **http://localhost:5000**
+### Optional: Seed a demo dataset
+
+Run the deterministic seeder to recreate the DB and populate users, reports, comments, and images.
+
+```bash
+python -m seed.seed_runner
+```
+
+All seeded passwords are `password`. See `seed/README.md` for details.
 
 ---
 

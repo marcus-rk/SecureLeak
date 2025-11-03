@@ -1,0 +1,30 @@
+Reflected XSS in search
+Stored XSS in comments
+CSRF on profile update
+Weak JWT secret
+Directory listing on /uploads
+IDOR on report detail
+Open redirect on login redirect parameter
+SQL injection in filter parameter
+No rate limiting on login
+Missing HTTPOnly on session cookie
+Clickjacking on settings page
+Insecure CORS wildcard
+Path traversal in file download
+Verbose error messages leak stack trace
+Missing CSRF on delete action
+Server-side request forgery via URL fetcher
+Weak password policy accepts short strings
+Account enumeration via timing
+No lockout after failed logins
+Insecure direct object reference on user profile
+Unvalidated redirect on logout
+XXE in XML import
+Command injection in utility endpoint
+Hardcoded API keys in client code
+Missing content security policy
+Unsafe deserialization endpoint
+JWT algorithm confusion
+Session fixation on login
+Cache poisoning via proxy headers
+Missing input validation on notes
