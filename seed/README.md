@@ -1,22 +1,77 @@
-# Seed Pack (KISS)
 
-This folder provides small, deterministic demo data for SecureLeak. It recreates a fresh database and inserts users, reports, comments, and a sprinkling of images.
+# Seed Pack — Hacker‑Style (KISS)
 
-All seeded user passwords are literally: `password`.
+Goal: compact, realistic seed data for a public‑facing security research site. Tone is informal, concise, and community‑oriented. Every seeded account uses the password: `password`.
 
-## Contents
+## Folder layout
 
-- `users.csv` — base users (2 admins + 10–16 developers)
-- `report_titles.txt` — ~30 report titles
-- `report_snippets.txt` — ~30 short lines to assemble descriptions
-- `comment_snippets.txt` — ~25 conversational comment lines
-- `images/` — pre-committed PNGs used for attachments (add ~5–8 small demo images)
-- `seed_runner.py` — CLI seeder (deterministic; RNG seed = 42)
+```
+/seed/
+  README.md
+  users.csv
+  report_titles.txt
+  report_snippets.txt
+  comment_snippets.txt
+  images/                # 5–8 small PNGs you add + README.txt
+```
+
+## What’s included
+
+- Users: playful, hacker‑y display names; 2–3 admins, rest users
+- Reports: 35–55 with mixed severity and status
+- Comments: short, helpful thread lines with a casual tone
+- Images: optional; attached to ~35% of reports if present
+
+## Users format (this repo)
+
+CSV header expected by the seeder: `email,name,role`
+
+- `email`: any fake address (we use `@mail.com`)
+- `name`: display name; username is auto‑slugified from this
+- `role`: `admin` or `user`
+- Password for every account is literally `password` (hashed during seeding)
+
+Note: older docs sometimes show `email,username,display_name,role`. In this project the seeder reads `email,name,role` and generates the username from `name`.
+
+## Images
+
+Put 5–8 small PNGs in `seed/images/` with descriptive names, e.g.
+
+```
+bug_01.png
+poc_auth_bypass.png
+sqli_console.png
+csrf_flow.png
+stacktrace_500.png
+```
+
+Tips:
+- Keep each image small (<100 KB) so the repo stays light
+- Avoid the prefix `placeholder_` — the seeder ignores files named `placeholder_*.png`
+- PNG only; MIME is set to `image/png` by the seeder
+
+If no images are present, seeding still works; reports are created without attachments.
+
+## How to run
+
+Run the seeder to reset the database and load demo content:
+
+```
+python seed/seed_runner.py
+```
+
+What it does:
+1) Drops the existing SQLite DB and recreates schema
+2) Wipes the uploads directory
+3) Loads `users.csv`, `report_titles.txt`, `report_snippets.txt`, `comment_snippets.txt`
+4) Creates 35–55 reports at random, adds comments, and (optionally) attaches images
+
+That’s it — fast, deterministic, and ready to demo.
  
 
 ## What it creates
 
-- Users: 12–18 total (2 admins: admin1@admin.com, admin2@admin.com; everyone uses password `password`)
+- Users: 12–18 total (2 admins: admin1@mail.com, admin2@mail.com; everyone uses password `password`)
 - Reports: 35–55 across all users
   - status distribution: ~55% public, ~35% private, ~10% closed
   - severity distribution: ~25% low, ~45% medium, ~30% high

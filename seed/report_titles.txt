@@ -1,30 +1,45 @@
-Reflected XSS in search
-Stored XSS in comments
-CSRF on profile update
-Weak JWT secret
-Directory listing on /uploads
-IDOR on report detail
-Open redirect on login redirect parameter
+Reflected XSS in /search
+Stored XSS in comment widget
+CSRF on profile update endpoint
+Weak JWT secret in auth service
+Directory listing exposes uploads/
+IDOR on report detail (owner check missing)
+Open redirect via return_url param
 SQL injection in filter parameter
-No rate limiting on login
-Missing HTTPOnly on session cookie
-Clickjacking on settings page
-Insecure CORS wildcard
-Path traversal in file download
-Verbose error messages leak stack trace
-Missing CSRF on delete action
-Server-side request forgery via URL fetcher
-Weak password policy accepts short strings
-Account enumeration via timing
-No lockout after failed logins
-Insecure direct object reference on user profile
-Unvalidated redirect on logout
-XXE in XML import
-Command injection in utility endpoint
-Hardcoded API keys in client code
-Missing content security policy
-Unsafe deserialization endpoint
-JWT algorithm confusion
-Session fixation on login
-Cache poisoning via proxy headers
-Missing input validation on notes
+Login doesn't rate-limit failed attempts
+Missing HttpOnly cookie on session
+Clickjacking allowed on admin UI
+Path traversal in file download endpoint
+Verbose error page reveals stack trace
+Insecure CORS policy allows any origin
+SSRF in URL fetcher service
+Insecure file upload allows large files
+Session fixation on login flow
+Account enumeration via timing on login
+Sensitive logs include PII
+Cache poisoning via Host header
+Unsafe deserialization in notifications
+Hardcoded API key in client JS
+JWT alg=none accepted
+GraphQL introspection enabled in prod
+Password reset token not invalidated
+Webhook signature not verified
+ETag leaks user IDs
+CORS exposes Authorization header
+No lockout on admin login
+Rate-limit missing on file upload
+Unrestricted file download (no MIME check)
+Directory traversal in image path
+Missing CSP frame-ancestors allows clickjacking
+2FA bypass via backup code reuse
+Email change flow lacks re-authentication
+OAuth redirect URI not validated
+Public S3 bucket exposes backups
+CSRF on delete comment action
+Admin audit log accessible to users
+Debug endpoints enabled in production
+JWT 'none' alg accepted (yikes)
+Open redirect, classic footgun
+CSP missing — clickjacking party
+Debug endpoints live in prod (oops)
+IDOR lets you peek at neighbors

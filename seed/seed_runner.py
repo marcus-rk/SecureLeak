@@ -170,8 +170,8 @@ def main() -> None:
         print(f"  Reports: {len(report_ids)}")
         print(f"  Comments:{total_comments}")
 
-    # Ensure DB connection closes cleanly
-    close_db()
+        # Ensure DB connection closes cleanly (must be inside app context)
+        close_db()
 
 
 if __name__ == "__main__":

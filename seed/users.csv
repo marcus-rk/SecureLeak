@@ -1,17 +1,18 @@
 email,name,role
-admin1@admin.com,Admin One,admin
-admin2@admin.com,Admin Two,admin
-alex.jensen@example.com,Alex Jensen,user
-sara.ahmed@example.com,Sara Ahmed,user
-lukas.schmidt@example.com,Lukas Schmidt,user
-maria.garcia@example.com,Maria Garcia,user
-li.wei@example.com,Li Wei,user
-noah.martin@example.com,Noah Martin,user
-emma.nilsson@example.com,Emma Nilsson,user
-chloe.dubois@example.com,Chloe Dubois,user
-mateo.rossi@example.com,Mateo Rossi,user
-sofia.ivanova@example.com,Sofia Ivanova,user
-aya.tanaka@example.com,Aya Tanaka,user
-oliver.jones@example.com,Oliver Jones,user
-nina.kovac@example.com,Nina Kovac,user
-pavel.novak@example.com,Pavel Novak,user
+admin1@mail.com,Zero Cool,admin
+admin2@mail.com,Acid Burn,admin
+rootkit@mail.com,rootkit,admin
+pwnie@mail.com,pwnie,user
+bug.hunter@mail.com,Bug Hunter,user
+fuzzlord@mail.com,Fuzz Lord,user
+xss.wizard@mail.com,XSS Wizard,user
+sql.ninja@mail.com,SQL Ninja,user
+csrf.mancer@mail.com,CSRF Mancer,user
+rce.dreams@mail.com,RCE Dreams,user
+ssrfisher@mail.com,SSRFisher,user
+log4shell@mail.com,Log4Shell Enjoyer,user
+cookie.monster@mail.com,Cookie Monster,user
+packet.stormer@mail.com,Packet Stormer,user
+ghost.wires@mail.com,Ghost In The Wires,user
+bit.flip@mail.com,Bit Flip,user
+null.byte@mail.com,Null Byte,user

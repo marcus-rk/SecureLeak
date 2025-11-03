@@ -1,36 +1,93 @@
-Steps to reproduce:
-1. Go to the affected endpoint.
-2. Provide the crafted input.
+repro:
+1) GET /search?q=<script>alert(1)</script>
+payload reflected in response
+impact: cookie theft / phishing
+observed on staging and prod-like
+root cause: unescaped user input in template
+fix: escape output and add CSP
+temporary: filter <script> tags on input
+steps:
+create a new comment with payload
+visit profile page to trigger
+note: reproduces with authenticated users too
+affected versions: 1.2.0 - 1.2.4
+mitigation: update template rendering
+impact: remote code execution risk (if chained)
+example header: Referer: http://evil/
+server shows stack trace with query
+payload example: ' OR 1=1 --
+observed slow response under load
+suggested patch: parameterized queries only
+severity: high / medium / low
+reproduce with curl -v
+screenshot attached (see uploads)
+console shows error and trace
+do not disclose publicly until fixed
+reported by: community member
+note: attacker can view other users' items
+PoC: curl -H 'X-Forwarded-Host: evil.tld'
+bypass: add ?_method=DELETE
+CSRF token missing on POST
+SameSite cookie not set
+session persists after password change
+jwt secret is short (8 chars)
+accepts alg=none token
+file upload accepts .php disguised as .png
+content-type not validated server-side
+CORS: Access-Control-Allow-Origin: *
+preflight allows Authorization header
+open redirect via return_url
+IDOR: change id=123 to id=124
+rate limit: none on /login
+brute force feasible (~1k/min)
+cache: Vary header missing
+host header used in cache key
+leak: verbose 500 page dumps env
+headers: X-Frame-Options missing
+add frame-ancestors 'none'
+CSP report-only only, not enforced
+log includes email + IP + session id
+sanitize stack traces in prod
+disable debug endpoints in prod
+set HSTS for apex + subdomains
+samesite=lax recommended
+require re-auth for sensitive changes
+tokens not invalidated after use
+webhook signature not verified
+GraphQL introspection enabled
+pagination missing, loads entire list
+memory spike under load test
+time-based user enumeration on login
+password reset link valid after use
+2FA backup codes reusable
+upgrade dependency X to >= y.z
+rollback if patch breaks compat
 
-Expected vs actual:
-- Expected: input is validated and rejected.
-- Actual: input is accepted and executed.
-
-Impact:
-- Allows unauthorized access to sensitive data.
-- Can lead to account takeover.
-
-Affected version:
-- Observed on v1.2.3 and v1.2.4.
-
-Mitigation:
-- Apply input validation on the server side.
-- Use parameterized queries.
-- Add CSRF tokens to all state-changing forms.
-
-Notes:
-- Reproduces consistently
-- Intermittent under load
-- Requires authenticated user
-- Works for guest users as well
-- Payloads included below
-- See attached screenshot
-- Confirmed by QA
-- Needs triage
-- Needs severity review
-- Cross-team required fix
-- Regression from last release
-- Consider adding WAF rules
-- Include sanitization library
-- Review error handling
-- Update documentation
+uhhhh, that’s a spicy bug
+tiny payload, big oof
+who needs auth anyway
+speedrun any% account takeover
+classic footgun unlocked
+oops, all admin
+devs when they see this: 😅
+chef’s kiss PoC
+please don’t try this in prod (lol)
+this belongs on r/netsec
+can confirm on mobile too
+“works on my machine” energy
+logs are yelling at me
+bookmarking for later shenanigans
+someone ship a hotfix burrito
+vibes: very exploitable
+impact: yikes
+threat model: logged-out attacker
+CWE-79 fits (XSS)
+CWE-352 likely (CSRF)
+references: OWASP cheat sheets
+cvss rough: 7.5 (est.)
+node tip: helmet + strict CSP
+sanitize inputs server-side
+parameterize queries, never concat
+rotate tokens after password reset
+repro stable on slow network
+minimal PoC posted above
