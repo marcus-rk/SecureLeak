@@ -15,7 +15,11 @@
 
     Maintenance Notes:
     - Preserve section dividers to keep related rules grouped.
-    - Favor variable reuse before introducing new colors or spacing.
+    - Favor token reuse (CSS variables) before introducing new colors or spacing.
+    - Prefer logical properties (e.g., margin-inline) for layout adaptability.
+    - Add :focus-visible styles when introducing interactive elements.
+    - Respect prefers-reduced-motion for transitions/animations.
+    - Prefer container queries for component responsiveness when possible.
     - Document any major layout change directly above the affected section.
     - Consider existing styles before adding new rules to avoid redundancy.
 */
@@ -43,6 +47,9 @@
 /* --------------------------------
     Base layout
 --------------------------------- */
+/* Global box-sizing for predictable sizing */
+*, *::before, *::after { box-sizing: border-box; }
+
 body {
     margin: 0;
     padding: 0;
@@ -62,6 +69,14 @@ main {
     background-color: var(--color-surface);
     box-shadow: var(--glow);
     box-sizing: border-box;
+    /* Enable container queries for children */
+    container-type: inline-size;
+}
+
+/* Media defaults to avoid overflow across the app */
+img, svg {
+    max-inline-size: 100%;
+    block-size: auto;
 }
 
 /* --------------------------------
@@ -80,7 +95,6 @@ h6 {
 
 h1 {
     font-size: clamp(2rem, 3vw, 2.75rem);
-    color: var(--color-text);
 }
 
 h2 {
@@ -107,7 +121,6 @@ header {
     border-bottom: 1px solid var(--color-border);
     background-color: var(--color-surface);
     box-shadow: 0 12px 40px -32px rgba(16, 247, 163, 0.3);
-    box-sizing: border-box;
 }
 
 header nav {
@@ -150,7 +163,7 @@ section.auth-form p a {
 /* --------------------------------
    Interactive elements
 --------------------------------- */
-button {
+:where(button, .button-link) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -163,12 +176,19 @@ button {
     letter-spacing: 0.01em;
     cursor: pointer;
     transition: transform 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+    text-decoration: none;
 }
 
-button:hover {
+:where(button, .button-link):hover {
     filter: brightness(1.05);
     transform: translateY(-1px);
     background-color: rgba(16, 247, 163, 0.1);
+}
+
+/* Accessible focus rings for keyboard users */
+:where(a.button-link, .button-link, button, input, select, textarea):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
 }
 
 label {
@@ -187,7 +207,6 @@ textarea {
     color: var(--color-text);
     font-size: 1rem;
     line-height: 1.5;
-    box-sizing: border-box;
 }
 
 input:focus,
@@ -242,8 +261,7 @@ textarea {
 /* --------------------------------
    Card sections
 --------------------------------- */
-section.auth-form,
-section.reports {
+.card {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -252,7 +270,6 @@ section.reports {
     border: 1px solid var(--color-border);
     border-radius: 12px;
     background-color: var(--color-surface-elevated);
-    box-sizing: border-box;
 }
 
 section.auth-form form,
@@ -262,18 +279,27 @@ section.reports form {
     gap: 1rem;
 }
 
-section.auth-form h2 {
+.card h2 {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--color-primary);
 }
 
-section.reports h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--color-primary);
+/* --------------------------------
+   Report attachments (images)
+--------------------------------- */
+.report-attachment {
+    margin-top: 0.5rem;
+}
+
+.report-attachment img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: var(--glow);
 }
 
 /* --------------------------------
@@ -358,33 +384,32 @@ tbody tr:hover .table-link {
     margin: 0.25rem 0 0;
     font-size: 1.05rem;
     color: var(--color-text);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
 }
 
-.button-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--color-primary);
-    border-radius: 6px;
-    background-color: transparent;
-    color: var(--color-primary);
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    text-decoration: none;
-    cursor: pointer;
-    transition: transform 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+/* Dedicated description block: full-width readable text */
+.report-description h3 {
+    margin: 0;
+    font-size: 1.1rem;
+
+    color: var(--color-text-muted);
 }
 
-.button-link:hover {
-    filter: brightness(1.05);
-    transform: translateY(-1px);
-    background-color: rgba(16, 247, 163, 0.1);
+.report-description p {
+    margin: 0.5rem 0 0;
+    color: var(--color-text);
+    line-height: 1.6;
+    /* Prevent long, unbroken content from overflowing */
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 /* Provide a small gap when multiple buttons appear inline in the same paragraph */
 p .button-link + .button-link {
-    margin-left: 0.5rem;
+    margin-inline-start: 0.5rem;
 }
 
 /* --------------------------------
@@ -503,8 +528,8 @@ p .button-link + .button-link {
     color: var(--color-text-muted);
 }
 
-/* Responsive layout: place the two CSRF toggles side-by-side on wide screens */
-@media (min-width: 720px) {
+/* Component responsiveness via container queries */
+@container (min-width: 720px) {
     .csrf-controls {
         flex-direction: row;
         align-items: center;
@@ -513,5 +538,15 @@ p .button-link + .button-link {
     }
     .switch {
         min-width: max-content;
+    }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
     }
 }

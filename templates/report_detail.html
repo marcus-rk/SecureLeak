@@ -5,35 +5,36 @@
 #}
 {% extends "layout.html" %}
 {% block content %}
-    <section class="reports">
+    <section class="reports card">
         <h2>Report #{{ report.id }}: {{ report.title }}</h2>
         <div class="report-detail">
-            <dl>
-                <div>
-                    <dt>Owner</dt>
-                    <dd>
-                        {{ report.owner_username or 'Unknown' }}
-                    </dd>
-                </div>
-                <div>
-                    <dt>Status</dt>
-                    <dd>
-                        {{ report.status|capitalize }}
-                    </dd>
-                </div>
-                <div>
-                    <dt>Severity</dt>
-                    <dd>
-                        {{ report.severity|capitalize }}
-                    </dd>
-                </div>
-                <div>
-                    <dt>Description</dt>
-                    <dd>
-                        {{ report.description }}
-                    </dd>
-                </div>
-            </dl>
+            <div class="report-meta">
+                <dl>
+                    <div>
+                        <dt>Owner</dt>
+                        <dd>
+                            {{ report.owner_username or 'Unknown' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Status</dt>
+                        <dd>
+                            {{ report.status|capitalize }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Severity</dt>
+                        <dd>
+                            {{ report.severity|capitalize }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="report-description">
+                <h3>Description</h3>
+                <p>{{ report.description }}</p>
+            </div>
         </div>
         {% if report.image_name %}
             <div class="report-attachment">
