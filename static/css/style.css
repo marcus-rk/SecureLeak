@@ -291,6 +291,8 @@ section.reports form {
 --------------------------------- */
 .report-attachment {
     margin-top: 0.5rem;
+    display: flex;
+    justify-content: center;
 }
 
 .report-attachment img {
