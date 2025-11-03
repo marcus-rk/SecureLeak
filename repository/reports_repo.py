@@ -43,9 +43,9 @@ def list_public_and_own(user_id: int, limit: int = 100, offset: int = 0) -> List
 def update_report(report_id: int, updates: Dict[str, Any]) -> bool:
     """Update allowed report columns using a whitelist to avoid SQL injection.
 
-    Allowed fields: title, description, severity, status.
+    Allowed fields: title, description, severity, status, image_name.
     """
-    allowed = {"title", "description", "severity", "status"}
+    allowed = {"title", "description", "severity", "status", "image_name"}
     sanitized = {k: v for k, v in updates.items() if k in allowed}
     if not sanitized:
         return False

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS reports (
     owner_id INTEGER NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
+    image_name TEXT NULL,
     severity TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('public','private','closed')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

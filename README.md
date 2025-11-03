@@ -36,6 +36,7 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 - Project overview: [docs/project_overview.md](docs/project_overview.md)
 - Authentication & sessions: [docs/auth.md](docs/auth.md)
 - Security model (threats/defenses): [docs/security_model.md](docs/security_model.md)
+ - Reports & uploads: [docs/reports.md](docs/reports.md)
 
 ---
 

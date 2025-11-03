@@ -7,7 +7,7 @@ Threats considered:
 - SQL injection
 - Session fixation / hijacking
 - Clickjacking and weak browser defaults
-- File upload abuse (not enabled yet; approach documented below)
+- File upload abuse
 
 Defenses in this codebase:
 
@@ -38,11 +38,12 @@ Defenses in this codebase:
   - Flask‑Talisman sets secure headers (CSP, HSTS, X‑Frame‑Options, Referrer‑Policy, X‑Content‑Type‑Options).
   - In production, enable `SESSION_COOKIE_SECURE=True` and HTTPS so cookies are never sent over HTTP.
 
-Uploads (when added):
+Uploads:
 
-- Validate MIME type (`image/*`), bound size, and content sniffing; reject executables.
-- Sanitize and randomize filenames (`secure_filename`, `secrets.token_hex()`); never execute or inline return content.
-- Store files outside `/static` and serve via `send_file()` with authorization checks.
+- Validation (KISS): allowlist extensions (`.png`, `.jpg`, `.jpeg`, `.gif`), require MIME prefix `image/`, size cap 2 MiB.
+- Filenames: randomized + sanitized (`secrets.token_hex()` + `secure_filename`).
+- Storage: outside `/static` under `uploads/<report_id>/`; configurable via `UPLOADS_DIR`.
+- Serving: via `send_from_directory` (inline) with auth and visibility checks; only serve the exact `image_name` stored for the report.
 
 Limits & trade‑offs:
 
