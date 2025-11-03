@@ -113,7 +113,9 @@ SecureLeak/
 │
 ├─ security/               # Security helpers and selfmade decorators
 │  ├─ auth_utils.py        # Argon2id hasher, email normalize, verify/rehash
-│  └─ decorators.py        # login_required, role checks (KISS)
+│  ├─ decorators.py        # login_required, role checks
+│  ├─ uploads.py           # Upload validation, random naming, storage directory resolution
+│  └─ reports_access.py    # Shared report visibility checks (public vs private owner)
 │
 ├─ templates/              # Jinja2 templates (auto-escaped)
 │  ├─ layout.html          # Base layout + nav + flash messages
@@ -245,7 +247,7 @@ Each phase builds naturally on the previous one — simple, readable, and exam-f
 - Form: `<input type="file" accept="image/*">` in `report_new.html`
 - Routes:  
   - `POST /reports/new` handles uploads  
-  - `GET /reports/file/<name>` serves via `send_file()`
+  - `GET /reports/<id>/image/<name>` serves via `send_file()`
 - CSS: small thumbnail styling
 
 **Security (what/why/how):**
@@ -349,7 +351,7 @@ Each phase builds naturally on the previous one — simple, readable, and exam-f
 | `GET` | `/reports` | List reports |
 | `GET` | `/reports/<id>` | View single report |
 | `POST` | `/reports/<id>/comment` | Add comment |
-| `GET` | `/reports/file/<name>` | Serve uploaded file (auth checked) |
+| `GET` | `/reports/<id>/image/<name>` | Serve uploaded file (auth checked) |
 | `GET/POST` | `/admin` | Admin dashboard |
 | `POST` | `/admin/import` | Import XML/JSON report data |
 

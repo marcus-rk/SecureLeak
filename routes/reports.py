@@ -103,9 +103,10 @@ def view_report(report_id: int) -> ResponseReturnValue:
     return render_template("report_detail.html", report=report), 200
 
 
-@reports_bp.route("/file/<int:report_id>/<path:name>", methods=["GET"])
+@reports_bp.route("/<int:report_id>/image/<path:name>", methods=["GET"])  # New, clearer path
+@reports_bp.route("/file/<int:report_id>/<path:name>", methods=["GET"])   # Back-compat alias
 @login_required
-def file(report_id: int, name: str) -> ResponseReturnValue:
+def report_file(report_id: int, name: str) -> ResponseReturnValue:
     report = reports_repo.get_report_by_id(report_id)
     if not report:
         abort(404)
@@ -126,6 +127,3 @@ def file(report_id: int, name: str) -> ResponseReturnValue:
 def _report_bad_request(msg: str) -> ResponseReturnValue:
     flash(msg, "error")
     return render_template("report_new.html"), 400
-
-
-# helpers moved to security.uploads and security.reports_access to keep routes simple

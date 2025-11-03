@@ -35,7 +35,7 @@ Notes:
 - `GET /reports/<id>` — detail
   - Requires login. Visible if report is public or you are the owner of a private report; otherwise 404.
 
-- `GET /reports/file/<report_id>/<name>` — serve image
+- `GET /reports/<id>/image/<name>` — serve image
   - Requires login. Same visibility rule as detail.
   - Only serves when `name` equals the DB‑stored `image_name` for that report.
   - Inline display (`send_from_directory(..., as_attachment=False)`).
