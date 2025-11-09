@@ -94,7 +94,7 @@ def main() -> None:
                 name = (row["name"] or "user").strip()
                 role = (row["role"] or "user").strip().lower()
                 username = slugify_username(name, taken_usernames)
-                pwd_hash = hasher.hash("password")
+                pwd_hash = hasher.hash("password123")
                 uid = users_repo.create_user(email=email, password_hash=pwd_hash, username=username, role=role)
                 user_ids.append(uid)
 
