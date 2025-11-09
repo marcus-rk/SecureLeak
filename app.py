@@ -50,7 +50,12 @@ def create_app() -> Flask:
     csrf.init_app(app)
     Talisman(
     app,
-    content_security_policy={ "default-src": "'self'", "script-src": "'self'", "style-src": "'self' 'unsafe-inline'", "object-src": "'none'", "frame-ancestors": "'none'" },
+    content_security_policy={ 
+        "default-src": "'self'", 
+        "script-src": "'self'", 
+        "style-src": "'self' 'unsafe-inline'", 
+        "object-src": "'none'", 
+        "frame-ancestors": "'none'" },
     force_https=not app.debug,
     strict_transport_security=True
 )
