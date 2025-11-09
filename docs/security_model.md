@@ -34,6 +34,7 @@ Defenses in this codebase:
 - Sessions
   - Cookie sessions are signed; `HttpOnly` and `SameSite=Lax` configured.
   - `session.clear()` at auth boundaries (fixation defense), then store minimal identity.
+  - Admin routes verify roles both from the session and the database on each request. This mitigates any risk of tampered session data and ensures up-to-date privileges.
 - Headers / Browser guards
   - Flask‑Talisman sets secure headers (CSP, HSTS, X‑Frame‑Options, Referrer‑Policy, X‑Content‑Type‑Options).
   - In production, enable `SESSION_COOKIE_SECURE=True` and HTTPS so cookies are never sent over HTTP.

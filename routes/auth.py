@@ -73,7 +73,7 @@ def register_post() -> ResponseReturnValue:
 
     # Server-side validation: enforce minimum password length regardless of client-side HTML
     if not validate_password(password):
-        return _register_bad_request("Password must be at least 12 characters.")
+        return _register_bad_request("Password must be at least 10 characters.")
     
     # Check for existing email or username to avoid duplicates
     if users_repo.get_user_by_email(email):
