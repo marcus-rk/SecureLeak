@@ -1,19 +1,14 @@
-"""Simple selfmade Flask auth decorators
-instead of using Flask-Login or similar packages.
-Provides @login_required and @require_role(role) decorators.
+"""Simple auth decorators for this app (KISS).
 
-Additionally provides a small helper `require_owner_or_admin(owner_id)`
-for use inside routes to gate per-object access.
+Provides:
+- @login_required → redirects unauthenticated users to /auth/login
+- @require_role(role) → requires a specific role; for 'admin' also verifies in DB
+- require_owner_or_admin(owner_id) → helper for per-object access
 """
 
 from functools import wraps
 from flask import abort, flash, redirect, session, url_for
-
-# Lazy import in functions to avoid circulars during app startup
-try:
-    from repository.users_repo import get_user_by_id  # type: ignore
-except Exception:  # pragma: no cover - import safety during docs/build
-    get_user_by_id = None  # type: ignore
+from repository.users_repo import get_user_by_id
 
 # Decorator to require user login for a view.
 def login_required(view):
@@ -28,12 +23,13 @@ def login_required(view):
 
 # Decorator to require a specific user role for a view.
 def require_role(role: str):
-    """Require a specific role.
+    """Require `role` for a route (404 on mismatch; no info leak).
 
-    Behavior:
-    - If unauthenticated, redirect to login (keeps UX consistent with @login_required).
-    - If authenticated but role mismatch, return 404 to avoid leaking role/authorization info.
+    - Unauthenticated → redirect to login (consistent with @login_required)
+    - Mismatch → abort(404)
+    - For 'admin' → confirm role in DB each request (defense-in-depth)
     """
+    required = (role or "").lower()
 
     def decorator(view):
         @wraps(view)
@@ -42,65 +38,44 @@ def require_role(role: str):
             if not uid:
                 flash("Please sign in.", "info")
                 return redirect(url_for("auth.login"))
-            required = (role or "").lower()
 
-            # Session role check first (cheap and avoids timing leaks)
+            # Cheap session role check first
             sess_role = (session.get("role") or "").lower()
             if sess_role != required:
-                # Hide whether user exists or not
                 abort(404)
 
-            # Defense-in-depth for privileged routes: confirm with DB
+            # Defense-in-depth: verify DB role for admins
             if required == "admin":
-                # Only check DB if repository import is available
-                user = None
-                if callable(get_user_by_id):  # type: ignore
-                    try:
-                        user = get_user_by_id(int(uid))  # type: ignore[arg-type]
-                    except Exception:
-                        user = None
-                # If user missing or DB role isn't admin → hide with 404
-                db_role = ((user or {}).get("role") or "").lower() if user else ""
+                try:
+                    user = get_user_by_id(int(uid))
+                except Exception:
+                    user = None
+                db_role = ((user or {}).get("role") or "").lower()
                 if db_role != "admin":
                     abort(404)
+
             return view(*args, **kwargs)
-
         return wrapped
-
     return decorator
 
 
 def require_owner_or_admin(owner_id: int) -> bool:
-    """Return True if the current session user owns the object or is an admin.
-
-    Use inside route handlers for per-object access gates, e.g.:
-
-        if not require_owner_or_admin(report["user_id"]):
-            abort(404)
-
-    We return False (not raise) so routes can choose appropriate behavior.
-    """
-
+    """Return True if current user owns the object or is an admin."""
     uid = session.get("user_id")
     if not uid:
         return False
 
-    # Owner check (coerce to int defensively)
+    # Owner check (defensive int cast)
     try:
         if int(uid) == int(owner_id):
             return True
     except Exception:
-        # If session uid is malformed, treat as not owner
-        pass
+        return False
 
-    # Admin check via DB (authoritative)
-    if callable(get_user_by_id):  # type: ignore
-        try:
-            user = get_user_by_id(int(uid))  # type: ignore[arg-type]
-        except Exception:
-            user = None
-        role = ((user or {}).get("role") or "").lower() if user else ""
-        return role == "admin"
-
-    # Fallback to session role only if repo not importable
-    return (session.get("role") or "").lower() == "admin"
+    # Admin check (verified via DB)
+    try:
+        user = get_user_by_id(int(uid))
+    except Exception:
+        user = None
+    role = ((user or {}).get("role") or "").lower()
+    return role == "admin"
