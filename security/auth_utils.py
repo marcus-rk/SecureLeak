@@ -55,7 +55,7 @@ def maybe_upgrade_hash(
         return
 
 
-def validate_password(password: str, min_len: int = 8) -> bool:
+def validate_password(password: str, min_len: int = 12) -> bool:
     """Return True if password meets minimal rules; False otherwise."""
     if not isinstance(password, str):
         return False

@@ -51,6 +51,7 @@ def create_app() -> Flask:
     Talisman(app,content_security_policy={
             "default-src": "'self'",
             "script-src": "'self'",
+            "style-src": "'self' 'unsafe-inline'"
         }, 
         force_https=not app.debug, # Enforce HTTPS in production
         strict_transport_security=True) # Enable HSTS
