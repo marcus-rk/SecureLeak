@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -28,6 +29,8 @@ def create_app() -> Flask:
         # Limits cookies being sent on cross-site requests.
         # Reduces risk of Cross-Site Request Forgery (CSRF) by defaulting to first-party context.
         SESSION_COOKIE_SAMESITE="Lax",
+        PERMANENT_SESSION_LIFETIME=timedelta(minutes=30), # Session timeout duration
+        SESSION_COOKIE_SECURE=not app.debug,  # Ensures cookies are only sent over HTTPS in production
     )
 
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
@@ -48,7 +51,9 @@ def create_app() -> Flask:
     Talisman(app,content_security_policy={
             "default-src": "'self'",
             "script-src": "'self'",
-        })
+        }, 
+        force_https=not app.debug, # Enforce HTTPS in production
+        strict_transport_security=True) # Enable HSTS
 
     from routes.auth import auth_bp
     from routes.reports import reports_bp
