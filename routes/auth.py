@@ -15,6 +15,7 @@ from security.auth_utils import (
     normalize_and_validate_email,
     verify_password,
     validate_password,
+    normalize_email
 )
 from security.decorators import login_required
 
@@ -33,7 +34,7 @@ def login() -> ResponseReturnValue:
 @auth_bp.route("/login", methods=["POST"])
 def login_post() -> ResponseReturnValue:
     email_raw = request.form.get("email", "")
-    email = normalize_and_validate_email(email_raw)
+    email = normalize_email(email_raw)
     password = request.form.get("password", "")
 
     if not email or not password:
@@ -133,5 +134,4 @@ def _establish_session(user: dict) -> None:
     session.clear()
     # Minimal identity: who the user is and, optionally, their role
     session["user_id"] = user["id"]
-    if "role" in user:
-        session["role"] = user["role"]
+    session["role"] = (user.get("role") or "user").lower()
