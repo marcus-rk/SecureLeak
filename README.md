@@ -424,6 +424,21 @@ flask --app app run --debug
 ```
 
 App runs on **http://localhost:5000**
+
+## Quick Start — Local HTTPS
+```bash
+# Install mkcert (creates locally trusted TLS certificates)
+brew install mkcert nss
+mkcert -install
+
+# Generate trusted certificates for localhost
+mkcert localhost 127.0.0.1
+
+flask --app app run --cert=localhost+1.pem --key=localhost+1-key.pem
+```
+
+App runs on **https://127.0.0.1:5000**
+
 ### Optional: Seed a demo dataset
 
 Run the deterministic seeder to recreate the DB and populate users, reports, comments, and images.
@@ -432,7 +447,7 @@ Run the deterministic seeder to recreate the DB and populate users, reports, com
 python -m seed.seed_runner
 ```
 
-All seeded passwords are `password`. See `seed/README.md` for details.
+All seeded passwords are `password123`. See `seed/README.md` for details.
 
 ---
 

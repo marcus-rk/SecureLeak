@@ -44,3 +44,7 @@ yarn-error.log*
 # Git merge leftovers
 *.orig
 *.rej
+
+# local SSL certificates
+localhost+1-key.pem
+localhost+1.pem
