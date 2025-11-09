@@ -20,7 +20,7 @@ def create_app() -> Flask:
     # Configure app with security-focused settings
     app.config.from_mapping(
         # SECRET_KEY — cryptographic key used to sign sessions and CSRF tokens.
-        SECRET_KEY=os.environ.get("SECRET_KEY", "5f4dcc3b5aa765d61d8327deb882cf99"), # Bad practice!
+        SECRET_KEY=os.environ.get("SECRET_KEY"), # Bad practice!
         DATABASE=os.environ.get("DATABASE", str(Path(app.instance_path) / "secureleak.sqlite")),
         UPLOADS_DIR=os.environ.get("UPLOADS_DIR", "uploads"),
         # Disallows reading session cookies.
