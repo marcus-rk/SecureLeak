@@ -57,25 +57,3 @@ def require_role(role: str):
             return view(*args, **kwargs)
         return wrapped
     return decorator
-
-
-def require_owner_or_admin(owner_id: int) -> bool:
-    """Return True if current user owns the object or is an admin."""
-    uid = session.get("user_id")
-    if not uid:
-        return False
-
-    # Owner check (defensive int cast)
-    try:
-        if int(uid) == int(owner_id):
-            return True
-    except Exception:
-        return False
-
-    # Admin check (verified via DB)
-    try:
-        user = get_user_by_id(int(uid))
-    except Exception:
-        user = None
-    role = ((user or {}).get("role") or "").lower()
-    return role == "admin"
