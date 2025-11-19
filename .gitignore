@@ -1,13 +1,19 @@
+########################################
+# Python
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
+*.pdb
+.Python
 .python-version
 
-# Virtual env
-venv/
+# Virtual environments
 .venv/
+venv/
 env/
 
-# Local env variables
+# Local environment variables
 .env
 .env.*
 .envrc
@@ -16,6 +22,7 @@ env/
 instance/
 uploads/
 *.sqlite
+*.sqlite3
 *.db
 
 # Frontend cache (if used locally)
@@ -27,13 +34,20 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-
 # Editor settings
 .vscode/
 .idea/
 
-# OS cruft
+# macOS
 .DS_Store
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Coverage reports
+.coverage
+htmlcov/
 
 # Linter/tool caches
 .ruff_cache/
