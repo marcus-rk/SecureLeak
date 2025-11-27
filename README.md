@@ -19,6 +19,9 @@
 
 ---
 
+TODO: Anvend SQLalchemy ORM. (Django gennemgået i undervisning)
+
+---
 ## Project Overview
 
 **SecureLeak** is a simplified bug tracker where developers (users) can submit **vulnerability reports** to admins. 
