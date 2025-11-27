@@ -1,7 +1,9 @@
 email,name,role
 admin1@mail.com,Zero Cool,admin
 admin2@mail.com,Acid Burn,admin
-rootkit@mail.com,rootkit,admin
+user1@mail.com,UzzzerOne,user
+user2@mail.com,UsEr_O02,user
+rootkit@mail.com,rootkit,user
 pwnie@mail.com,pwnie,user
 bug.hunter@mail.com,Bug Hunter,user
 fuzzlord@mail.com,Fuzz Lord,user
