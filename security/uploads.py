@@ -8,6 +8,7 @@ from typing import Optional, Tuple
 from flask import current_app
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
+from PIL import Image
 
 ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".gif"}
 MAX_UPLOAD_BYTES = 2 * 1024 * 1024  # 2 MiB
@@ -49,5 +50,16 @@ def store_report_image(file: FileStorage, report_id: int, base_dir: Optional[str
     report_dir = Path(base_dir) / str(report_id)
     report_dir.mkdir(parents=True, exist_ok=True)
     dest_path = report_dir / dest_name
-    file.save(str(dest_path))
+
+    # Sanitize image: Open with Pillow, strip metadata, and save fresh
+    # This removes EXIF data (GPS, camera info) and re-encodes the pixels
+    with Image.open(file) as img:
+        # Convert to RGB to handle PNGs with transparency if saving as JPEG,
+        # but here we keep original format. Pillow saves without metadata by default.
+        # We create a new image to ensure no hidden data is copied over.
+        data = list(img.getdata())
+        clean_img = Image.new(img.mode, img.size)
+        clean_img.putdata(data)
+        clean_img.save(str(dest_path))
+
     return dest_name

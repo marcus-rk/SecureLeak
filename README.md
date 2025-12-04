@@ -2,8 +2,8 @@
 
 > *A minimal, educational bug tracker built to study and prevent web vulnerabilities.*
 
-![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
-![Flask](https://img.shields.io/badge/Flask-2.x-black?logo=flask)
+![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python)
+![Flask](https://img.shields.io/badge/Flask-3.x-black?logo=flask)
 ![SQLite](https://img.shields.io/badge/SQLite-07405E?logo=sqlite&logoColor=white)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
@@ -11,15 +11,11 @@
 ![Argon2](https://img.shields.io/badge/Password-Argon2-7952B3)
 ![FlaskWTF](https://img.shields.io/badge/Forms-CSRF_Protected-green)
 ![FlaskTalisman](https://img.shields.io/badge/Headers-CSP%2FHSTS-orange)
-![Werkzeug](https://img.shields.io/badge/Uploads-Safe-yellow)
-![Gunicorn](https://img.shields.io/badge/WSGI-Gunicorn-499848?logo=gunicorn&logoColor=white)
-![Nginx](https://img.shields.io/badge/Reverse_Proxy-Nginx-009639?logo=nginx&logoColor=white)
+![FlaskLimiter](https://img.shields.io/badge/DoS-Rate_Limiting-red)
+![Pillow](https://img.shields.io/badge/Uploads-Sanitized-yellow)
+![Werkzeug](https://img.shields.io/badge/WSGI-Werkzeug-gray)
 ![Security](https://img.shields.io/badge/Focus-Web_Security-critical)
 [![CI - Lint and Security](https://github.com/marcus-rk/SecureLeak/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/marcus-rk/SecureLeak/actions/workflows/ci.yml)
-
----
-
-TODO: Anvend SQLalchemy ORM. (Django gennemgået i undervisning)
 
 ---
 ## Project Overview
@@ -39,8 +35,12 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 - Project overview: [docs/project_overview.md](docs/project_overview.md)
 - Authentication & sessions: [docs/auth.md](docs/auth.md)
 - Security model (threats/defenses): [docs/security_model.md](docs/security_model.md)
- - Reports & uploads: [docs/reports.md](docs/reports.md)
- - Roles & admin area: [docs/roles.md](docs/roles.md)
+- Reports & uploads: [docs/reports.md](docs/reports.md)
+- Roles & admin area: [docs/roles.md](docs/roles.md)
+- Rate Limiting & DoS: [docs/limiting.md](docs/limiting.md)
+- Audit Logging: [docs/audit_logging.md](docs/audit_logging.md)
+- Image Sanitization: [docs/image_sanitization.md](docs/image_sanitization.md)
+- Security.txt: [docs/security_txt.md](docs/security_txt.md)
 
 ---
 
@@ -49,11 +49,13 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 | Threat | Mitigation |
 |:--------|:------------|
 | SQL Injection | Parameterized queries |
-| XSS | Auto-escaped templates, CSP |
-| CSRF | Flask-WTF CSRF tokens |
-| File Upload Abuse | MIME validation, random names, non-public storage |
-| XXE / Deserialization | Secure XML parser, entities & DTD disabled |
-| Session Hijacking | HttpOnly + SameSite cookies |
+| XSS | Auto-escaped templates, CSP, HttpOnly cookies |
+| CSRF | Flask-WTF CSRF tokens, SameSite=Lax |
+| DoS / Abuse | Rate Limiting (Flask-Limiter), Resource Quotas |
+| File Upload Abuse | Pillow Sanitization (strips metadata), MIME validation, random names |
+| Non-repudiation | Audit Logging (who, what, when) |
+| Brute Force | Rate limiting (5/min), Argon2id hashing, Common password check |
+| Session Hijacking | HttpOnly + SameSite cookies, Session regeneration |
 | Client-Side Manipulation | All checks enforced server-side |
 
 ---
@@ -81,12 +83,6 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 - Public / private report visibility
 - Comments for discussions
 - Secure file uploads (screenshots / PoCs)
-- Admin dashboard (moderate, close, delete)
-- Optional XML/JSON import (XXE-safe)
-- Security headers (CSP, HSTS, X-Frame-Options, etc.)
-
----
-
 ## 📂 Project Structure
 
 ```
@@ -95,10 +91,7 @@ SecureLeak/
 ├─ requirements.txt        # Python dependencies
 ├─ pytest.ini              # pytest configuration
 ├─ README.md               # Project guide + documentation links
-├─ docs/                   
-│  ├─ project_overview.md  # Layers, dependencies, trade-offs
-│  ├─ auth.md              # Auth flow, sessions, CSRF, PRG
-│  └─ security_model.md    # Threat model and defenses
+├─ docs/                   # Detailed documentation (Architecture, Security, Auth, etc.)
 │
 ├─ database/               
 │  ├─ connection.py        # get_db()/close_db(); SQLite connection used by repositories
@@ -112,49 +105,41 @@ SecureLeak/
 │  └─ comments_repo.py     
 │
 ├─ routes/                 # Feature routes (Flask blueprints)
-│  ├─ auth.py              # Login, register, logout (Argon2id, CSRF, PRG)
-│  └─ reports.py           # List/view/new reports
+│  ├─ auth.py              # Login, register, logout (Argon2id, CSRF, PRG, Audit)
+│  ├─ reports.py           # List/view/new reports (Audit, Sanitization)
+│  └─ admin.py             # Admin dashboard
 │
 ├─ security/               # Security helpers and selfmade decorators
-│  ├─ auth_utils.py        # Argon2id hasher, email normalize, verify/rehash
+│  ├─ 10k-common-passwords # List of common passwords for checks
+│  ├─ audit.py             # Audit logging logic (writes to instance/audit.log)
+│  ├─ auth_utils.py        # Argon2id hasher, email normalize, common password check
 │  ├─ decorators.py        # login_required, role checks
-│  ├─ uploads.py           # Upload validation, random naming, storage directory resolution
-│  └─ reports_access.py    # Shared report visibility checks (public vs private owner)
+│  ├─ limiter.py           # Rate limiting configuration (Flask-Limiter)
+│  ├─ reports_access.py    # Shared report visibility checks
+│  ├─ security.txt         # Vulnerability disclosure content
+│  └─ uploads.py           # Upload validation, Pillow sanitization, storage logic
 │
 ├─ templates/              # Jinja2 templates (auto-escaped)
 │  ├─ layout.html          # Base layout + nav + flash messages
-│  ├─ login.html           # Auth form with CSRF token
-│  ├─ register.html        # Registration form with CSRF token
-│  ├─ reports_list.html    # Reports table
-│  ├─ report_detail.html   # Single report view
-│  ├─ report_new.html      # Create report form
+│  ├─ ...                  # Feature templates
 │  └─ errors/              
 │     ├─ 400.html          # Bad request (e.g., CSRF)
 │     ├─ 404.html          # Not found
+│     ├─ 429.html          # Too Many Requests (Rate Limit)
 │     └─ 500.html          # Server error
 │
-├─ static/                 # Front-end assets
-│  ├─ css/
-│  │  └─ style.css         
-│  ├─ js/
-│  │  └─ main.js           
-│  └─ icons/               
+├─ static/                 # Front-end assets (CSS, JS, Icons)
 │
 ├─ tests/                  # Pytest test-suite
 │  ├─ conftest.py          # App fixture (temp DB per run)
-│  ├─ auth/
-│  │  └─ test_login.py     # CSRF + login redirect checks
-│  ├─ security/
-│  │  ├─ test_headers.py   # CSP header checks
-│  │  └─ test_csp_headers.py
+│  ├─ auth/                # Auth tests
+│  ├─ security/            # Security tests (Headers, CSP)
 │  └─ repository/          # Repository CRUD tests
-│     ├─ test_users_repo.py
-│     ├─ test_reports_repo.py
-│     └─ test_comments_repo.py
 │
 ├─ uploads/                # Uploaded files (kept outside /static)
 └─ instance/               # Runtime data (DB, logs)
-  └─ logs/
+  ├─ secureleak.sqlite     # SQLite database
+  └─ audit.log             # Security audit log
 ```
 
 **How it works:**
@@ -168,234 +153,86 @@ SecureLeak/
 
 ---
 
-# 🧭 SecureLeak – Development Outline
+## 🧭 Development Roadmap
 
-A simple, phased roadmap with both **Feature (how)** and **Security (what/why/how)** focus.  
-Each phase builds naturally on the previous one — simple, readable, and exam-friendly.
+The project was built in phases to ensure security was integrated at every step, not added as an afterthought.
 
----
-
-## **Phase 1 – Setup (Skeleton)**
-
-**Feature (how):**
-- Create base files: `app.py`, `.env`, `requirements.txt`, `.gitignore`
-- Add folders: `database/` (with `migrations/`), `repository/`, `routes/`, `templates/`, `static/{css,js}`, `instance/`
-- Add base templates: `layout.html`
-- Static assets: `style.css`, `main.js`
-- Create a test route `/` in `app.py` or a tiny blueprint
-
-**Security (what/why/how):**
-- CSRF protection: enable `Flask-WTF` → `CSRFProtect(app)`
-- HTTP headers: `Flask-Talisman` with a minimal CSP (`default-src 'self'`)
-- Secret management: store `SECRET_KEY` in `.env`
-
-**Done when:**
-- The home page renders via Jinja2
-- A dummy POST without a CSRF token returns 400/403
-- App runs at `http://localhost:5000`
+| Phase | Feature Focus | Security Implementation |
+|:---|:---|:---|
+| **1. Setup** | Skeleton, DB, Routes | **Secure Headers** (CSP, HSTS), **CSRF** protection (Flask-WTF), Secrets management (.env) |
+| **2. Auth** | Register, Login, Sessions | **Argon2id** hashing, **Common Password** check, HttpOnly/SameSite cookies |
+| **3. Reports** | CRUD, Visibility | **Parameterized Queries** (SQLi), **Access Control** (Private/Public logic), Auto-escaping (XSS) |
+| **4. Uploads** | File attachments | **Pillow Sanitization** (Metadata stripping), Random filenames, Non-public storage |
+| **5. Comments** | Discussion threads | **Input Trimming**, Strict CSP for inline scripts, PRG pattern |
+| **6. Admin** | Dashboard, Status management | **Role-Based Access Control** (RBAC), Admin-only routes |
+| **7. Hardening** | Production readiness | **Rate Limiting** (DoS protection), **Audit Logging**, Security.txt |
 
 ---
 
-## **Phase 2 – Authentication (Register/Login/Logout)**
+## 🚀 How to Run
 
-**Feature (how):**
-- DB table: `users(id, email unique, username, password_hash, role)`
-- Templates: `login.html`, `register.html`
-- Routes (`routes/auth.py`):  
-  - `GET/POST /register` (form → create user)  
-  - `GET/POST /login` (form → session cookie)  
-  - `POST /logout`
-- Minimal CSS for forms
+### Prerequisites
+- Python 3.12+
+- pip
 
-**Security (what/why/how):**
-- Password hashing: `argon2-cffi`  
-- Sessions: Flask cookie `HttpOnly`, `SameSite='Lax'`
-- CSRF tokens in all auth forms  
-- Validation: trim inputs, require password length
+### Installation
 
-**Done when:**
-- Can register, log in, and log out
-- Wrong password fails safely
-- Cookies have `HttpOnly` and `SameSite=Lax`
+1. **Clone and Setup**
+   ```bash
+   git clone https://github.com/marcus-rk/SecureLeak.git
+   cd SecureLeak
+   python3 -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
 
----
+2. **Initialize Database**
+   The database is automatically initialized on the first run.
+   Optionally, you can seed it with demo data:
+   ```bash
+   python -m seed.seed_runner
+   ```
+   *Note: Seeded users have password `password123`.*
 
-## **Phase 3 – Reporting (Create/List/View)**
+3. **Run the Application**
+   ```bash
+   flask --app app run --debug
+   ```
+   Access at: `http://localhost:5000`
 
-**Feature (how):**
-- DB table: `reports(id, owner_id, title, description, severity, status)`  
-  - `status`: `'public' | 'private' | 'closed'`
-- Templates: `reports_list.html`, `report_new.html`
-- Routes (`routes/reports.py`):  
-  - `GET /reports` (list public + own private)  
-  - `GET/POST /reports/new` (create new report)
-- Basic table layout in CSS
+### Running with HTTPS (Local)
+To test secure cookies and headers properly:
+```bash
+# Install mkcert
+brew install mkcert nss
+mkcert -install
+mkcert localhost 127.0.0.1
 
-**Security (what/why/how):**
-- SQL injection: **parameterized queries only**
-- XSS: auto-escape Jinja (`{{ title }}` not `|safe`)
-- CSRF token in create form
-- Authorization: limit visibility (no foreign private reports)
-
-**Done when:**
-- Users can create, list, and view their own reports
-- Private reports stay private
-- Random SQL input doesn’t break queries
+# Run with certs
+flask --app app run --cert=localhost+1.pem --key=localhost+1-key.pem
+```
+Access at: `https://127.0.0.1:5000`
 
 ---
 
-## **Phase 4 – Uploads (Screenshots/Proofs)**
+## 🧪 Testing
 
-**Feature (how):**
-- Add `/uploads/` directory (outside `/static/`)
-- Form: `<input type="file" accept="image/*">` in `report_new.html`
-- Routes:  
-  - `POST /reports/new` handles uploads  
-  - `GET /reports/<id>/image/<name>` serves via `send_file()`
-- CSS: small thumbnail styling
+The project includes a comprehensive test suite using `pytest`.
 
-**Security (what/why/how):**
-- File validation: allow only `image/*` MIME types
-- Filename: sanitize + randomize with `secure_filename` + `secrets.token_hex()`
-- Access control: private report files accessible only to owner/admin
-- Prevent direct public serving of `/uploads/`
+```bash
+# Run all tests
+pytest
 
-**Done when:**
-- Non-images or large files are rejected
-- Private file URL blocked for other users
+# Run specific category
+pytest tests/security/
+pytest tests/auth/
+```
 
----
-
-## **Phase 5 – Comments (Discussion)**
-
-Add lightweight commenting to report details, matching the current blueprint structure, PRG pattern, CSRF, and authorization helpers.
-
-**Feature (how):**
-1) Schema (SQLite)
-   - Table `comments` with minimal fields:
-     - `id` INTEGER PRIMARY KEY AUTOINCREMENT
-     - `report_id` INTEGER NOT NULL
-     - `author_id` INTEGER NOT NULL
-     - `body` TEXT NOT NULL
-     - `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-   - Index: `CREATE INDEX idx_comments_report_created ON comments(report_id, created_at);`
-   - Foreign keys (documented, optional to enforce now): `report_id → reports.id`, `author_id → users.id`.
-
-2) Repository layer (`repository/comments_repo.py`)
-   - `create_comment(report_id: int, author_id: int, body: str) -> int`
-   - `list_comments_for_report(report_id: int) -> list[dict]` (ORDER BY created_at ASC)
-   - Keep I/O tiny and parameterized (same style as other repos).
-
-3) Routes (extend `routes/reports.py`)
-   - Read path (no new route): reuse existing `GET /reports/<id>`; fetch comments and pass to template.
-   - Write path: `POST /reports/<id>/comment`
-     - `@login_required`
-     - Load report → 404 if missing
-     - Visibility check: if the report is not viewable by this user, 404
-     - Comment policy (KISS): allow posting when report is public or user is the owner (private)
-     - Validate body: `body = (request.form.get("body") or "").strip()`; require 1..2000 chars
-     - Insert via repo, flash success, PRG redirect `303` back to `reports.view_report`
-     - On validation error: flash + render detail with 400 (keep form state), or redirect with message
-
-4) Template (`templates/report_detail.html`)
-   - Comments list (above the attachment, below description):
-     - Show author username and timestamp; body auto-escaped (no `|safe`)
-     - Empty state: “No comments yet.”
-   - Comment form (below list):
-     - `method="post" action="/reports/{{ id }}/comment"`
-     - Hidden CSRF token `{{ csrf_token() }}`
-     - `<textarea name="body" required rows="4" maxlength="2000"></textarea>`
-     - Submit button; follow existing button styles
-   - Keep structure consistent with `.card` and existing tokens; no inline JS
-
-5) Styling (reuse, keep KISS)
-   - Reuse existing `.card`, typography, and button styles; optionally add a tiny block:
-     - `.comments { display: flex; flex-direction: column; gap: .75rem; }`
-     - `.comment__meta { font-size: .875rem; color: var(--color-text-muted); }`
-   - Only add if needed visually; otherwise rely on defaults.
-
-**Security (what/why/how):**
-- XSS: rely on Jinja auto-escaping; do not mark comment text as safe; no HTML allowed
-- CSRF: include `{{ csrf_token() }}` in the form; handled globally by Flask-WTF
-- Authorization: use the same visibility rule as detail
-  - Private reports: only owner may view and comment (others get 404)
-  - Public reports: any authenticated user may view and comment
-- Abuse caps: trim input; 1..2000 chars; ignore extraneous client fields
-- PRG: use 303 after successful POST to avoid double-submits
-
-**Testing (add to `tests/`)**
-- Repository tests (`tests/repository/test_comments_repo.py`): create/list ordering
-- Route tests (`tests/reports/test_comments.py`):
-  - 303 on successful post; comment appears on detail page
-  - 400 on empty/too-long body with flash
-  - 404 when posting to a private report you do not own
-  - CSRF: missing token → 400 (uses same HTTPS/Referer pattern)
-
-**Done when:**
-- Comments render under report description in chronological order
-- Posting to public reports (signed-in) and own private reports works
-- `<script>` tags show as text; no HTML executes
-- Missing/invalid CSRF returns friendly 400
-- Redirect-after-post prevents duplicate submissions
-
----
-
-## **Phase 6 – Admin Tools (Publish/Close/Delete)**
-
-**Feature (how):**
-- Admin role: add `role='admin'` in DB
-- Admin page: `admin_dashboard.html` with status buttons  
-  - Publish → `status='public'`  
-  - Make Private → `status='private'`  
-  - Close → `status='closed'`
-- Routes (`routes/admin.py`):  
-  - `GET /admin` (dashboard)  
-  - `POST /admin/report/<id>/<action>` (publish, close, etc.)
-
-**Security (what/why/how):**
-- Authorization: `@require_admin` on all admin routes
-- CSRF: tokens on all admin forms
-- Input sanitization: validate `id` and `action`
-- Optional import demo: if added, disable XML external entities
-
-**Done when:**
-- Admin can see all reports
-- Buttons change status correctly
-- Non-admin access denied to `/admin` routes
-
----
-
-## **Phase 7 – Final Hardening (Headers, HTTPS, Review)**
-
-**Feature (how):**
-- Remove all inline JS → move to `static/js/main.js`
-- Configure final CSP:  
-  `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:`
-- Test under Gunicorn/Nginx + HTTPS
-
-**Security (what/why/how):**
-- Headers via `Flask-Talisman`: HSTS, Referrer-Policy, X-Frame-Options, X-Content-Type-Options
-- Cookies: set `Secure=True` (production)
-- Manual review: test XSS, CSRF, SQLi, file upload safety
-
-**Done when:**
-- No inline JS breaks under CSP
-- HTTPS works, cookies marked Secure
-- Manual “attack” tests all fail safely
-
----
-
-## ✅ **Checklist Summary**
-
-| Area | What You Verify |
-|:------|:----------------|
-| Templates | Proper escaping, no inline JS |
-| Auth | Passwords hashed, cookies protected |
-| Reports | SQLi prevented, visibility correct |
-| Uploads | No file exposure, validated types |
-| Comments | XSS & CSRF safe |
-| Admin | Role restrictions enforced |
-| Config | CSP/HSTS headers, secrets in `.env` |
+**Test Coverage:**
+- **Auth**: Login, Register, Logout, Session management.
+- **Security**: CSP headers, HSTS, Rate Limiting, Password hashing.
+- **Repository**: Database CRUD operations.
+- **Uploads**: File type validation, sanitization.
 
 ---
 
@@ -413,44 +250,7 @@ Add lightweight commenting to report details, matching the current blueprint str
 | `GET` | `/reports/<id>/image/<name>` | Serve uploaded file (auth checked) |
 | `GET` | `/admin` | Admin dashboard (list all reports) |
 | `POST` | `/admin/reports/<id>/status` | Change status to public/private/closed |
-
----
-
-## Quick Start
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-flask --app app run --debug
-```
-
-App runs on **http://localhost:5000**
-
-## Quick Start — Local HTTPS
-```bash
-# Install mkcert (creates locally trusted TLS certificates)
-brew install mkcert nss
-mkcert -install
-
-# Generate trusted certificates for localhost
-mkcert localhost 127.0.0.1
-
-flask --app app run --cert=localhost+1.pem --key=localhost+1-key.pem
-```
-
-App runs on **https://127.0.0.1:5000**
-
-### Optional: Seed a demo dataset
-
-Run the deterministic seeder to recreate the DB and populate users, reports, comments, and images.
-
-```bash
-python -m seed.seed_runner
-```
-
-All seeded passwords are `password123`. See `seed/README.md` for details.
+| `GET` | `/.well-known/security.txt` | Security policy & disclosure |
 
 ---
 

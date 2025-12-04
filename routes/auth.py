@@ -20,6 +20,7 @@ from security.auth_utils import (
 )
 from security.decorators import login_required
 from security.limiter import limiter
+from security.audit import log_security_event
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -42,16 +43,18 @@ def login_post() -> ResponseReturnValue:
 
     if not email or not password:
         return _login_bad_request("Email and password are required.")
-
     user = users_repo.get_user_by_email(email)
     if not user or not verify_password(_hasher, user["password_hash"], password):
+        log_security_event("LOGIN_FAILED", ip=request.remote_addr, target_id=email)
         return _login_invalid()
 
     maybe_upgrade_hash(_hasher, user, password, users_repo.update_user)
 
     # Session fixation defense and identity establishment
     _establish_session(user)
+    log_security_event("LOGIN_SUCCESS", user_id=user["id"], ip=request.remote_addr)
 
+    flash("Signed in.", "success")
     flash("Signed in.", "success")
     return redirect(url_for("reports.list_reports"), 303)
 
@@ -87,12 +90,10 @@ def register_post() -> ResponseReturnValue:
     if users_repo.get_user_by_email(email):
         return _register_conflict("Email already registered.")
 
-    if users_repo.get_user_by_username(username):
-        return _register_conflict("Username already taken.")
-
     pwd_hash = _hasher.hash(password)
     # Fallback safety: ensure a non-empty username is stored
-    users_repo.create_user(email=email, password_hash=pwd_hash, username=username or email, role=role)
+    uid = users_repo.create_user(email=email, password_hash=pwd_hash, username=username or email, role=role)
+    log_security_event("REGISTER_USER", user_id=uid, ip=request.remote_addr)
     flash("Account created. Please sign in.", "success")
     return redirect(url_for("auth.login"), 303)
 
@@ -100,6 +101,10 @@ def register_post() -> ResponseReturnValue:
 @auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout() -> ResponseReturnValue:
+    log_security_event("LOGOUT", user_id=session.get("user_id"), ip=request.remote_addr)
+    session.clear()
+    flash("Signed out.", "info")
+    return redirect(url_for("auth.login"), 303)
     session.clear()
     flash("Signed out.", "info")
     return redirect(url_for("auth.login"), 303)

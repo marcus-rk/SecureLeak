@@ -19,6 +19,7 @@ from repository import comments_repo
 from security.decorators import login_required
 from security.limiter import limiter
 from security.reports_access import is_report_viewable
+from security.audit import log_security_event
 from security.uploads import (
     get_ext,
     is_allowed_ext,
@@ -75,10 +76,11 @@ def new_report_post() -> ResponseReturnValue:
         max_bytes = max_upload_bytes()
         if request.content_length and request.content_length > max_bytes:
             return _report_bad_request("File too large. Max size is 2 MiB.")
-
     owner_id = session.get("user_id")
     report_id = reports_repo.create_report(owner_id, title, description, severity, status)
+    log_security_event("CREATE_REPORT", user_id=owner_id, target_id=str(report_id), ip=request.remote_addr)
 
+    # Save file after report exists; on failure, continue without image (KISS)
     # Save file after report exists; on failure, continue without image (KISS)
     if file and file.filename:
         try:

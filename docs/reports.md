@@ -47,6 +47,9 @@ Notes:
   - Extension allowlist: `.png`, `.jpg`, `.jpeg`, `.gif` (lowercased)
   - MIME prefix: `image/`
   - Size cap: 2 MiB (checked via `request.content_length` when present)
+- Sanitization:
+  - All images are re-processed with Pillow (opened, data copied to new canvas, saved).
+  - This strips EXIF metadata (GPS, camera info) and ensures the file is a valid image.
 - Storage:
   - Outside `/static`: `uploads/<report_id>/<randomname>.<ext>`
   - Filenames: `secrets.token_hex()` + `secure_filename`

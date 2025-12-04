@@ -104,6 +104,12 @@ def create_app() -> Flask:
     def index() -> str:
         return render_template("login.html")
 
+    @app.route("/.well-known/security.txt")
+    def security_txt() -> str:
+        """Serve the security.txt file for vulnerability disclosure."""
+        content = Path("security/security.txt").read_text(encoding="utf-8")
+        return content, 200, {"Content-Type": "text/plain; charset=utf-8"}
+
     # Ensure DB connections are closed after each request/app context
     app.teardown_appcontext(close_db)
 

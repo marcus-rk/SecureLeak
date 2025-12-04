@@ -18,14 +18,16 @@ Browser → Routes (Blueprints) → Repository (SQL) → SQLite
   - Routes (`routes/`): minimal HTTP handlers per feature. POSTs use PRG (303 See Other → GET).
   - Repository (`repository/`): parameterized SQL only (prepared‑statement style) to prevent SQLi.
   - Database (`database/`): connection helpers and migrations (`migrations/init.sql`).
-  - Security (`security/`): pure helpers (Argon2id, email normalize), simple decorators.
+  - Security (`security/`): pure helpers (Argon2id, email normalize), simple decorators, audit logging, rate limiting.
   - Templates (`templates/`): Jinja views; a base `layout.html` renders flash messages and nav.
 
 - Dependencies (core)
   - Flask, Jinja2
   - Flask‑WTF (CSRFProtect, `generate_csrf`)
   - Flask‑Talisman (CSP, sane security headers)
+  - Flask-Limiter (Rate limiting)
   - argon2‑cffi (Argon2id password hashing)
+  - Pillow (Image sanitization)
   - sqlite3 (via Python stdlib)
 
 Why these choices:

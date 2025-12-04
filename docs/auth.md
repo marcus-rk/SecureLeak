@@ -11,6 +11,7 @@ POST /auth/logout → session.clear(), redirect 303 → /auth/login
 - Passwords: hashed with Argon2id (argon2‑cffi). Parameters are explicit for exam clarity (time, memory, parallelism). On login, hashes may be upgraded in place if parameters change.
 - Email normalization: `strip().lower()` before lookups to avoid duplicates and logic bugs.
 - Generic failures: the same 401 path for wrong email or password to limit user enumeration.
+- Rate Limiting: Login (5/min) and Register (3/hour) are limited by IP to prevent brute force and spam.
 
 Sessions (why and how):
 

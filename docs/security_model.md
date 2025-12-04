@@ -8,12 +8,19 @@ Threats considered:
 - Session fixation / hijacking
 - Clickjacking and weak browser defaults
 - File upload abuse
+- DoS / Abuse (brute force, spam, resource exhaustion)
 
 Defenses in this codebase:
 
 - CSRF
   - `CSRFProtect`: per‑session tokens; templates render `{{ csrf_token() }}`.
   - Errors mapped to HTTP 400 with a friendly explanation.
+- DoS & Abuse
+  - Rate Limiting: `Flask-Limiter` restricts requests per IP (e.g., 5 logins/min, 10 reports/hour).
+  - Resource Quotas: `MAX_CONTENT_LENGTH` (3MB) rejects massive payloads early.
+  - Password Strength: Minimum length (10 chars) and common password check (10k list).
+- Audit Logging
+  - Critical actions (login, register, report creation) are logged to `instance/audit.log` for non-repudiation.
 - XSS (cross‑site scripting)
   - Why it matters
     - Attacker‑controlled HTML/JS runs in the victim’s browser and can steal sessions, perform actions, or deface pages.
@@ -42,6 +49,7 @@ Defenses in this codebase:
 Uploads:
 
 - Validation (KISS): allowlist extensions (`.png`, `.jpg`, `.jpeg`, `.gif`), require MIME prefix `image/`, size cap 2 MiB.
+- Sanitization: Images are re-encoded using Pillow to strip EXIF metadata and neutralize potential payloads.
 - Filenames: randomized + sanitized (`secrets.token_hex()` + `secure_filename`).
 - Storage: outside `/static` under `uploads/<report_id>/`; configurable via `UPLOADS_DIR`.
 - Serving: via `send_from_directory` (inline) with auth and visibility checks; only serve the exact `image_name` stored for the report.
