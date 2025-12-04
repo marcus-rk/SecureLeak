@@ -213,6 +213,26 @@ flask --app app run --cert=localhost+1.pem --key=localhost+1-key.pem
 ```
 Access at: `https://127.0.0.1:5000`
 
+### 🐳 Running with Docker
+
+For a consistent, isolated environment:
+
+1.  **Run with Docker Compose (Recommended)**
+```bash
+docker compose up --build
+```
+The app will be available at `http://localhost:5001`.
+
+2.  **Manual Run (Alternative)**
+If you prefer running the raw docker command:
+```bash
+docker build -t secureleak .
+docker run -p 5001:5000 \
+  -v $(pwd)/instance:/app/instance \
+  -v $(pwd)/uploads:/app/uploads \
+  --env-file .env \
+  secureleak
+```
 ---
 
 ## 🧪 Testing
