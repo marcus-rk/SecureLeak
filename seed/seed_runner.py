@@ -12,12 +12,12 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from app import create_app
-from database.connection import close_db
-from database.initialize import apply as init_db
-from repository import users_repo, reports_repo, comments_repo
-from security.auth_utils import build_hasher
-from security.uploads import store_report_image, uploads_base_dir
+from app import create_app  # noqa: E402
+from database.connection import close_db  # noqa: E402
+from database.initialize import apply as init_db  # noqa: E402
+from repository import users_repo, reports_repo, comments_repo  # noqa: E402
+from security.auth_utils import build_hasher  # noqa: E402
+from security.uploads import store_report_image, uploads_base_dir  # noqa: E402
 
 
 # Deterministic RNG
@@ -78,9 +78,21 @@ def main() -> None:
         rep_snippets_txt = seed_dir / "report_snippets.txt"
         com_snippets_txt = seed_dir / "comment_snippets.txt"
 
-        titles = [line.strip() for line in titles_txt.read_text(encoding="utf-8").splitlines() if line.strip()]
-        rep_snippets = [line.rstrip() for line in rep_snippets_txt.read_text(encoding="utf-8").splitlines() if line.strip()]
-        com_snippets = [line.strip() for line in com_snippets_txt.read_text(encoding="utf-8").splitlines() if line.strip()]
+        titles = [
+            line.strip()
+            for line in titles_txt.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        rep_snippets = [
+            line.rstrip()
+            for line in rep_snippets_txt.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        com_snippets = [
+            line.strip()
+            for line in com_snippets_txt.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
         placeholder_images = load_seed_images(seed_dir)
 
         # 4) Insert users
