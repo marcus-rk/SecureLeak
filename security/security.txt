@@ -1,6 +1,7 @@
-Contact: mailto:security@secureleak.example.com
-Expires: 2026-01-01T00:00:00.000Z
-Preferred-Languages: en
-Policy: https://secureleak.example.com/security-policy
-Encryption: https://secureleak.example.com/pgp-key.txt
-Acknowledgments: https://secureleak.example.com/hall-of-fame
+Contact: mailto:makj0005@stud.kea.dk
+Expires: 2026-12-04T00:00:00.000Z
+Preferred-Languages: en, da
+Policy: https://github.com/marcus-rk/SecureLeak
+
+# This is an educational project.
+# Happy Hacking (Ethically)!
