@@ -274,7 +274,45 @@ def internal_error(_e):
 
 ---
 
-## 14. Architectural Reflections (The "Why")
+## 14. Case Study: Defense-in-Depth (The "Swiss Cheese" Model)
+
+**Scenario**: A user uploads a screenshot of a vulnerability.
+**Why this matters**: File uploads are a high-risk feature (RCE, XSS, DoS).
+**The Layers of Defense**:
+1.  **Network Layer**: Request is encrypted via **HTTPS/HSTS** (prevents interception).
+2.  **Application Layer (DoS)**: **Rate Limiter** checks if user exceeded 10 uploads/hour.
+3.  **Session Layer**: **CSRF Token** verified (prevents forced upload). **Auth Decorator** verifies login.
+4.  **Input Layer**:
+    *   **Extension Check**: Must be `.png`, `.jpg`, etc.
+    *   **MIME Check**: Must be `image/*`.
+    *   **Size Check**: Max 2MB (prevents disk exhaustion).
+5.  **Processing Layer**: **Pillow Sanitization** re-encodes the image, stripping malicious metadata or polyglot code.
+6.  **Storage Layer**: Filename is **Randomized** (prevents path traversal and overwrites).
+7.  **Data Layer**: **Audit Log** records the upload action.
+8.  **Presentation Layer**: Image served via `send_from_directory` with **CSP** headers (prevents XSS if sanitization failed).
+
+**Reflection for Report**:
+> "No single control is perfect. By stacking these 8 layers, we ensure that even if an attacker bypasses one (e.g., spoofs the MIME type), the next layer (Pillow sanitization) catches them. This illustrates the **Defense-in-Depth** principle in a practical, real-world feature."
+
+---
+
+## 15. Critical Reflection: Future Improvements
+
+**Concept**: Acknowledging limitations is a sign of maturity.
+**What is missing?**:
+1.  **Multi-Factor Authentication (MFA)**: Currently, a stolen password equals a compromised account. TOTP (Google Authenticator) would mitigate this.
+2.  **Database Scalability**: SQLite is excellent for development but locks the file during writes. For a high-traffic bug tracker, migrating to **PostgreSQL** would be necessary.
+3.  **Email Verification**: We currently trust the email provided. A "Verify your email" loop would prevent fake accounts.
+
+---
+
+## 16. Architectural Reflections (The "Why")
+
+### 💡 KISS Principle (Keep It Simple, Stupid)
+> "Complexity is the worst enemy of security. By using **SQLite** and standard **Flask** patterns, we reduced the attack surface. A complex microservices architecture might have introduced more vulnerabilities (e.g., insecure inter-service communication) than it solved for this scale."
+
+### 💡 Why Flask?
+> "We chose Flask over Django for this educational project because Flask is 'explicit'. In Django, much of the security (CSRF, Auth) happens 'magically' in the background. In Flask, we had to manually configure `Talisman`, `CSRFProtect`, and `LoginManager`, which demonstrates a deeper understanding of *how* these mechanisms actually work."
 
 ### 💡 KISS Principle (Keep It Simple, Stupid)
 > "Complexity is the worst enemy of security. By using **SQLite** and standard **Flask** patterns, we reduced the attack surface. A complex microservices architecture might have introduced more vulnerabilities (e.g., insecure inter-service communication) than it solved for this scale."
