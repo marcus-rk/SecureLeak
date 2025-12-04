@@ -58,9 +58,12 @@ def create_app() -> Flask:
         content_security_policy={ 
             "default-src": "'self'", 
             "script-src": "'self'", 
-            "style-src": "'self' 'unsafe-inline'", 
+            "style-src": "'self'", 
             "object-src": "'none'", 
-            "frame-ancestors": "'none'" },
+            "frame-ancestors": "'none'",
+            "form-action": "'self'",
+            "base-uri": "'self'"
+        },
         force_https=not app.debug,
         strict_transport_security=True
     )
