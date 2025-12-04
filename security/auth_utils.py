@@ -5,22 +5,6 @@ from email_validator import EmailNotValidError, validate_email
 
 _COMMON_PASSWORDS: Optional[Set[str]] = None
 
-def _load_common_passwords() -> Set[str]:
-    """Load common passwords from disk into a set (lazy loading)."""
-    global _COMMON_PASSWORDS
-    if _COMMON_PASSWORDS is None:
-        try:
-            # File is expected to be in the same directory as this module
-            p = Path(__file__).with_name("10k-common-passwords")
-            # Read lines, strip whitespace, and filter empty lines
-            lines = p.read_text(encoding="utf-8").splitlines()
-            _COMMON_PASSWORDS = {line.strip() for line in lines if line.strip()}
-        except Exception:
-            # Fail safe: if file is missing, return empty set (or log warning)
-            _COMMON_PASSWORDS = set()
-    return _COMMON_PASSWORDS
-
-
 def is_common_password(password: str) -> bool:
     """Check if the password is in the common passwords list."""
     common_set = _load_common_passwords()
@@ -86,3 +70,21 @@ def validate_password(password: str, min_len: int = 10) -> bool:
     if len(password) < min_len:
         return False
     return True
+
+
+def _load_common_passwords() -> Set[str]:
+    """Load common passwords from disk into a set (lazy loading)."""
+    global _COMMON_PASSWORDS
+    if _COMMON_PASSWORDS is None:
+        try:
+            # File is expected to be in the same directory as this module
+            p = Path(__file__).with_name("10k-common-passwords")
+            # Read lines, strip whitespace, and filter empty lines
+            lines = p.read_text(encoding="utf-8").splitlines()
+            _COMMON_PASSWORDS = {line.strip() for line in lines if line.strip()}
+        except Exception:
+            # Fail safe: if file is missing, return empty set (or log warning)
+            _COMMON_PASSWORDS = set()
+    return _COMMON_PASSWORDS
+
+

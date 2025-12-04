@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import os
 import secrets
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 from flask import current_app
 from werkzeug.datastructures import FileStorage

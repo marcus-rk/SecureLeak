@@ -54,7 +54,6 @@ def login_post() -> ResponseReturnValue:
     log_security_event("LOGIN_SUCCESS", user_id=user["id"], ip=request.remote_addr)
 
     flash("Signed in.", "success")
-    flash("Signed in.", "success")
     return redirect(url_for("reports.list_reports"), 303)
 
 

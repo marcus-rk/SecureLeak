@@ -1,7 +1,6 @@
 import sqlite3
-from contextlib import closing
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from flask import current_app, g
 
@@ -29,12 +28,3 @@ def close_db(_: Any = None) -> None:
     db = g.pop("db", None)
     if db is not None:
         db.close()
-
-
-def init_db(schema_sql: Iterable[str]) -> None:
-    """Initialize the database by executing the provided SQL statements."""
-    db = get_db()
-    with closing(db.cursor()) as cur:
-        for statement in schema_sql:
-            cur.execute(statement)
-    db.commit()
