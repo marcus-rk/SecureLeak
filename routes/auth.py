@@ -15,7 +15,8 @@ from security.auth_utils import (
     normalize_and_validate_email,
     verify_password,
     validate_password,
-    normalize_email
+    normalize_email,
+    is_common_password,
 )
 from security.decorators import login_required
 
@@ -75,6 +76,9 @@ def register_post() -> ResponseReturnValue:
     # Server-side validation: enforce minimum password length regardless of client-side HTML
     if not validate_password(password):
         return _register_bad_request("Password must be at least 10 characters.")
+
+    if is_common_password(password):
+        return _register_bad_request("Password is too common.")
     
     # Check for existing email or username to avoid duplicates
     if users_repo.get_user_by_email(email):
