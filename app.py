@@ -18,21 +18,22 @@ def create_app() -> Flask:
     load_dotenv()
     app = Flask(__name__, instance_relative_config=True)
 
-    # Configure app with security-focused settings
+    # --- Application Configuration ---
+    # Security settings are grouped here for clarity.
+    # 1. SECRET_KEY: Signs sessions and CSRF tokens. (Production: set this in .env!)
+    # 2. SESSION_COOKIE_HTTPONLY: Prevents JavaScript from reading the session cookie (XSS protection).
+    # 3. SESSION_COOKIE_SAMESITE: 'Lax' restricts cookies on cross-site requests (CSRF protection).
+    # 4. SESSION_COOKIE_SECURE: Sends cookies only over HTTPS (active when debug=False).
+    # 5. MAX_CONTENT_LENGTH: Limits request body to 3MB to prevent DoS attacks.
+    
     app.config.from_mapping(
-        # SECRET_KEY — cryptographic key used to sign sessions and CSRF tokens.
-        SECRET_KEY=os.environ.get("SECRET_KEY"), # Bad practice!
+        SECRET_KEY=os.environ.get("SECRET_KEY", "dev-insecure-key"),
         DATABASE=os.environ.get("DATABASE", str(Path(app.instance_path) / "secureleak.sqlite")),
         UPLOADS_DIR=os.environ.get("UPLOADS_DIR", "uploads"),
-        # Disallows reading session cookies.
-        # Protects against client-side script access if XSS ever occurs.
         SESSION_COOKIE_HTTPONLY=True,
-        # Limits cookies being sent on cross-site requests.
-        # Reduces risk of Cross-Site Request Forgery (CSRF) by defaulting to first-party context.
         SESSION_COOKIE_SAMESITE="Lax",
-        PERMANENT_SESSION_LIFETIME=timedelta(minutes=30), # Session timeout duration
-        SESSION_COOKIE_SECURE=not app.debug,  # Ensures cookies are only sent over HTTPS in production
-        # Limit max request body size to 3MB (2MB file + overhead) to prevent DoS
+        PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),
+        SESSION_COOKIE_SECURE=not app.debug,
         MAX_CONTENT_LENGTH=3 * 1024 * 1024,
     )
 

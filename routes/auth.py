@@ -37,7 +37,6 @@ def login() -> ResponseReturnValue:
 @limiter.limit("5 per minute")
 def login_post() -> ResponseReturnValue:
     email_raw = request.form.get("email", "")
-    email_raw = request.form.get("email", "")
     email = normalize_email(email_raw)
     password = request.form.get("password", "")
 
