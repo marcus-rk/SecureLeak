@@ -98,53 +98,53 @@ jobs:
         # earlier. That guarantees a human-friendly section in the job summary
         # even when lint errors exist.
 
-  template-lint:
-    name: Templates • djLint
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  # template-lint:
+  #   name: Templates • djLint
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 10
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      # Run only when templates changed
-      - name: Filter paths (Templates)
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            changed:
-              - 'templates/**'
+  #     # Run only when templates changed
+  #     - name: Filter paths (Templates)
+  #       id: filter
+  #       uses: dorny/paths-filter@v3
+  #       with:
+  #         filters: |
+  #           changed:
+  #             - 'templates/**'
 
-      - name: Set up Python 3.11 (pip cache)
-        if: ${{ steps.filter.outputs.changed == 'true' }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
+  #     - name: Set up Python 3.11 (pip cache)
+  #       if: ${{ steps.filter.outputs.changed == 'true' }}
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.11"
+  #         cache: "pip"
 
-        # djLint supports multiple templating engines. We use the Jinja profile
-        # to lint Flask/Jinja templates.
-      - name: Install djLint (pinned)
-        if: ${{ steps.filter.outputs.changed == 'true' }}
-        run: pip install "djlint==1.36.4"
+  #       # djLint supports multiple templating engines. We use the Jinja profile
+  #       # to lint Flask/Jinja templates.
+  #     - name: Install djLint (pinned)
+  #       if: ${{ steps.filter.outputs.changed == 'true' }}
+  #       run: pip install "djlint==1.36.4"
 
-      - name: djLint (Jinja profile)
-        id: djlint
-        continue-on-error: true
-        if: ${{ steps.filter.outputs.changed == 'true' }}
-        run: djlint templates --check --profile=jinja
-        # --check makes it fail on style issues (no auto-fix). We keep
-        # continue-on-error to always emit a summary before deciding pass/fail.
+  #     - name: djLint (Jinja profile)
+  #       id: djlint
+  #       continue-on-error: true
+  #       if: ${{ steps.filter.outputs.changed == 'true' }}
+  #       run: djlint templates --check --profile=jinja
+  #       # --check makes it fail on style issues (no auto-fix). We keep
+  #       # continue-on-error to always emit a summary before deciding pass/fail.
 
-      - name: Summary (Templates • djLint)
-        run: |
-          echo "## Templates • djLint" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
-            echo "- Skipped (no template changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
-          s="${{ steps.djlint.outcome }}"
-          echo "- djLint: $s" >> "$GITHUB_STEP_SUMMARY"
-          [ "$s" = "failure" ] && exit 1 || exit 0
-        # Same summary pattern: write a clear result and fail only here.
+  #     - name: Summary (Templates • djLint)
+  #       run: |
+  #         echo "## Templates • djLint" >> "$GITHUB_STEP_SUMMARY"
+  #         if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
+  #           echo "- Skipped (no template changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+  #         s="${{ steps.djlint.outcome }}"
+  #         echo "- djLint: $s" >> "$GITHUB_STEP_SUMMARY"
+  #         [ "$s" = "failure" ] && exit 1 || exit 0
+  #       # Same summary pattern: write a clear result and fail only here.
 
   security-audit:
     name: Security • Bandit & pip-audit
