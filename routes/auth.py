@@ -19,6 +19,7 @@ from security.auth_utils import (
     is_common_password,
 )
 from security.decorators import login_required
+from security.limiter import limiter
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -30,10 +31,11 @@ _hasher = build_hasher()
 def login() -> ResponseReturnValue:
     return render_template("login.html"), 200
 
-
 # POST: Login Authentication
 @auth_bp.route("/login", methods=["POST"])
+@limiter.limit("5 per minute")
 def login_post() -> ResponseReturnValue:
+    email_raw = request.form.get("email", "")
     email_raw = request.form.get("email", "")
     email = normalize_email(email_raw)
     password = request.form.get("password", "")
@@ -59,10 +61,11 @@ def login_post() -> ResponseReturnValue:
 def register() -> ResponseReturnValue:
     return render_template("register.html"), 200
 
-
 # POST: Create account
 @auth_bp.route("/register", methods=["POST"])
+@limiter.limit("3 per hour")
 def register_post() -> ResponseReturnValue:
+    email_raw = request.form.get("email", "")
     email_raw = request.form.get("email", "")
     email = normalize_and_validate_email(email_raw)
     password = request.form.get("password", "")

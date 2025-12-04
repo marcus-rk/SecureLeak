@@ -17,6 +17,7 @@ from flask.typing import ResponseReturnValue
 from repository import reports_repo
 from repository import comments_repo
 from security.decorators import login_required
+from security.limiter import limiter
 from security.reports_access import is_report_viewable
 from security.uploads import (
     get_ext,
@@ -46,6 +47,7 @@ def new_report() -> ResponseReturnValue:
 
 @reports_bp.route("/new", methods=["POST"])
 @login_required
+@limiter.limit("10 per hour")
 def new_report_post() -> ResponseReturnValue:
     title = (request.form.get("title") or "").strip()
     description = (request.form.get("description") or "").strip()
@@ -103,9 +105,9 @@ def view_report(report_id: int) -> ResponseReturnValue:
     comments = comments_repo.list_comments_for_report(report_id)
     return render_template("report_detail.html", report=report, comments=comments), 200
 
-
 @reports_bp.route("/<int:report_id>/comment", methods=["POST"])
 @login_required
+@limiter.limit("20 per hour")
 def add_comment(report_id: int) -> ResponseReturnValue:
     report = reports_repo.get_report_by_id(report_id)
     if not report:

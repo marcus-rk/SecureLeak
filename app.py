@@ -9,6 +9,7 @@ from flask_wtf import CSRFProtect
 from flask_wtf.csrf import generate_csrf, CSRFError
 
 from database.connection import close_db
+from security.limiter import limiter
 
 csrf = CSRFProtect()
 
@@ -31,6 +32,8 @@ def create_app() -> Flask:
         SESSION_COOKIE_SAMESITE="Lax",
         PERMANENT_SESSION_LIFETIME=timedelta(minutes=30), # Session timeout duration
         SESSION_COOKIE_SECURE=not app.debug,  # Ensures cookies are only sent over HTTPS in production
+        # Limit max request body size to 3MB (2MB file + overhead) to prevent DoS
+        MAX_CONTENT_LENGTH=3 * 1024 * 1024,
     )
 
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
@@ -47,18 +50,20 @@ def create_app() -> Flask:
 
     # CSRFProtect: attaches per-session tokens to all forms to prevent Cross-Site Request Forgery (CSRF) attacks.
     # Talisman: enforces secure HTTP headers (CSP, HSTS, frame and content guards) to mitigate XSS and clickjacking.
+    # Limiter: rate limiting to prevent brute-force and DoS attacks.
     csrf.init_app(app)
+    limiter.init_app(app)
     Talisman(
-    app,
-    content_security_policy={ 
-        "default-src": "'self'", 
-        "script-src": "'self'", 
-        "style-src": "'self' 'unsafe-inline'", 
-        "object-src": "'none'", 
-        "frame-ancestors": "'none'" },
-    force_https=not app.debug,
-    strict_transport_security=True
-)
+        app,
+        content_security_policy={ 
+            "default-src": "'self'", 
+            "script-src": "'self'", 
+            "style-src": "'self' 'unsafe-inline'", 
+            "object-src": "'none'", 
+            "frame-ancestors": "'none'" },
+        force_https=not app.debug,
+        strict_transport_security=True
+    )
 
     from routes.auth import auth_bp
     from routes.reports import reports_bp
@@ -89,6 +94,11 @@ def create_app() -> Flask:
     def handle_csrf_error(e: CSRFError):
         reason = getattr(e, "description", "Invalid or missing CSRF token")
         return render_template("errors/400.html", reason=reason), 400
+
+    # 429: Too Many Requests - Rate limiting
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        return render_template("errors/429.html"), 429
 
     @app.route("/")
     def index() -> str:
