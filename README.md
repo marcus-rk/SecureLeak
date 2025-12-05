@@ -179,6 +179,7 @@ The project was built in phases to ensure security was integrated at every step,
    python3 -m venv venv
    source venv/bin/activate  
    pip install -r requirements.txt
+   pip install --upgrade pip
    ```
 
 2. **Initialize Database**
