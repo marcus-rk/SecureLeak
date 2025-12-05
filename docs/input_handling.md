@@ -16,8 +16,23 @@ Before processing data, we validate that it meets expected formats.
 
 - **Type Enforcement**: We cast inputs to their expected types immediately (e.g., `int(report_id)`).
 - **Length Limits**: Inputs are checked for length to prevent database truncation issues or Denial of Service (DoS).
-  - *Example*: Comments are limited to 2000 characters.
-- **Allowlisting**: For critical fields like `severity` or `status`, we only accept values from a predefined set (`{'low', 'medium', 'high'}`).
+- **Allowlisting**: For critical fields like `severity` or `status`, we only accept values from a predefined set.
+
+```python
+# routes/reports.py - Validation Logic
+@limiter.limit("10 per hour")
+def new_report_post() -> ResponseReturnValue:
+    title = (request.form.get("title") or "").strip()
+    severity = (request.form.get("severity") or "").strip().lower()
+
+    if not title:
+        return _report_bad_request("Title is required.")
+
+    if severity not in {"low", "medium", "high"}:
+        return _report_bad_request("Invalid severity.")
+    
+    # ...
+```
 
 ---
 

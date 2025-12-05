@@ -1,61 +1,154 @@
 # Security Model (Threats & Defenses)
 
-Threats considered:
+This document outlines the threat model for **SecureLeak** and the specific defenses implemented to mitigate them. It is mapped to the **OWASP Top 10:2025** to demonstrate comprehensive coverage.
 
-- CSRF (cross‑site request forgery)
-- XSS (cross‑site scripting)
-- SQL injection
-- Session fixation / hijacking
-- Clickjacking and weak browser defaults
-- File upload abuse
-- DoS / Abuse (brute force, spam, resource exhaustion)
+---
 
-Defenses in this codebase:
+## 1. Broken Access Control (A01:2025)
 
-- CSRF
-  - `CSRFProtect`: per‑session tokens; templates render `{{ csrf_token() }}`.
-  - Errors mapped to HTTP 400 with a friendly explanation.
-- DoS & Abuse
-  - Rate Limiting: `Flask-Limiter` restricts requests per IP (e.g., 5 logins/min, 10 reports/hour).
-  - Resource Quotas: `MAX_CONTENT_LENGTH` (3MB) rejects massive payloads early.
-  - Password Strength: Minimum length (10 chars) and common password check (10k list).
-- Audit Logging
-  - Critical actions (login, register, report creation) are logged to `instance/audit.log` for non-repudiation.
-- XSS (cross‑site scripting)
-  - Why it matters
-    - Attacker‑controlled HTML/JS runs in the victim’s browser and can steal sessions, perform actions, or deface pages.
-  - How we prevent it here
-    - Auto‑escaping by Jinja2: values rendered with `{{ ... }}` are HTML‑escaped (`<`, `>`, `&`, `"`, `'`) so untrusted content shows as text, not code. Flask enables this by default for `.html` templates.
-    - Avoid `|safe` on untrusted data: `|safe` disables escaping and can reintroduce XSS. Only use it on trusted, pre‑sanitized HTML.
-    - Safe JS embedding with `|tojson`: when passing data into scripts, use `const data = {{ obj|tojson }};` to avoid breaking out of strings and to escape HTML‑significant chars correctly.
-    - No inline JS or event handlers: keep JS in `static/js/main.js` and use `data-*` attributes. Our CSP blocks inline scripts and reduces XSS impact if a template slips.
-    - Attribute/URL safety: keep attributes quoted and let Jinja escape: `<a href="{{ url }}">`, `<img alt="{{ name }}">`. If URLs come from users, whitelist schemes (e.g., `https`) to avoid `javascript:` links.
-  - Defense‑in‑depth
-    - Strict CSP via Talisman: `default-src 'self'; script-src 'self'` prevents third‑party and inline scripts, limiting exploitability.
-    - HttpOnly session cookies: JS cannot read the cookie, reducing impact if any reflected XSS occurs.
-  - Limits
-    - Auto‑escape doesn’t sanitize rich HTML or URLs. If you must render HTML, sanitize server‑side first (e.g., Bleach) and only then mark safe. Use proper helpers (`tojson`, `url_for`) for JS/JSON/URLs.
-- SQL Injection
-  - Repository layer uses parameterized queries (`?` placeholders) only.
-  - Whitelisting column names in dynamic updates.
-- Sessions
-  - Cookie sessions are signed; `HttpOnly` and `SameSite=Lax` configured.
-  - `session.clear()` at auth boundaries (fixation defense), then store minimal identity.
-  - Admin routes verify roles both from the session and the database on each request. This mitigates any risk of tampered session data and ensures up-to-date privileges.
-- Headers / Browser guards
-  - Flask‑Talisman sets secure headers (CSP, HSTS, X‑Frame‑Options, Referrer‑Policy, X‑Content‑Type‑Options).
-  - In production, enable `SESSION_COOKIE_SECURE=True` and HTTPS so cookies are never sent over HTTP.
+**Threat**: Users accessing resources or performing actions they are not authorized for (e.g., viewing another user's private report).
 
-Uploads:
+**Defenses**:
+1.  **Role-Based Access Control (RBAC)**: Decorators enforce role checks (`@require_role('admin')`).
+2.  **Object-Level Access Control (IDOR Prevention)**: Repository methods check ownership (e.g., `WHERE owner_id = ?`).
+3.  **Information Hiding**: Unauthorized access to admin routes returns `404 Not Found` instead of `403 Forbidden` to prevent enumeration.
 
-- Validation (KISS): allowlist extensions (`.png`, `.jpg`, `.jpeg`, `.gif`), require MIME prefix `image/`, size cap 2 MiB.
-- Sanitization: Images are re-encoded using Pillow to strip EXIF metadata and neutralize potential payloads.
-- Filenames: randomized + sanitized (`secrets.token_hex()` + `secure_filename`).
-- Storage: outside `/static` under `uploads/<report_id>/`; configurable via `UPLOADS_DIR`.
-- Serving: via `send_from_directory` (inline) with auth and visibility checks; only serve the exact `image_name` stored for the report.
+```python
+# security/decorators.py
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin":
+            abort(404) # Hide existence
+        return f(*args, **kwargs)
+    return decorated_function
+```
 
-Limits & trade‑offs:
+---
 
-- SQLite is perfect for prototyping; for concurrency and migrations at scale, use Postgres.
-- CSP can be strict; keep JS external (no inline) to avoid `unsafe-inline`.
-- Cookie sessions are simple; keep payloads minimal since they’re client‑held (though signed).
+## 2. Cryptographic Failures (A04:2025)
+
+**Threat**: Sensitive data (passwords, sessions) being exposed or cracked.
+
+**Defenses**:
+1.  **Strong Hashing**: **Argon2id** (memory-hard) is used for passwords, resisting GPU cracking.
+2.  **Secure Transmission**: `SESSION_COOKIE_SECURE=True` (in production) ensures cookies only travel over HTTPS.
+3.  **Entropy**: Random tokens for CSRF and filenames use `secrets.token_hex()` (CSPRNG).
+
+---
+
+## 3. Injection (A05:2025)
+
+**Threat**: Untrusted data being interpreted as code (SQLi, XSS).
+
+**Defenses**:
+1.  **SQL Injection**: Strictly using **Parameterized Queries** in `repository/`.
+2.  **Cross-Site Scripting (XSS)**:
+    *   **Auto-Escaping**: Jinja2 escapes HTML characters by default.
+    *   **Content Security Policy (CSP)**: Blocks inline scripts and restricts sources.
+    *   **HttpOnly Cookies**: Prevents JS from stealing sessions.
+
+```python
+# repository/reports_repo.py
+cursor.execute(
+    "INSERT INTO reports (owner_id, title, description, severity, status) VALUES (?, ?, ?, ?, ?)",
+    (owner_id, title, description, severity, status)
+)
+```
+
+---
+
+## 4. Insecure Design (A06:2025)
+
+**Threat**: Flaws in the logic or architecture that cannot be fixed by code alone.
+
+**Defenses**:
+1.  **Defense-in-Depth**: We don't rely on a single control (e.g., CSP backs up Auto-Escaping).
+2.  **Secure Defaults**: The app is secure by default (e.g., all routes require auth unless exempted).
+3.  **Rate Limiting**: Built-in protection against abuse, not added as an afterthought.
+
+---
+
+## 5. Security Misconfiguration (A02:2025)
+
+**Threat**: Insecure default settings or incomplete configurations.
+
+**Defenses**:
+1.  **Hardened Headers**: `Flask-Talisman` sets HSTS, X-Frame-Options, and X-Content-Type-Options.
+2.  **Cookie Security**: Explicitly setting `HttpOnly` and `SameSite=Lax`.
+3.  **Error Handling**: Custom error pages (404, 500) prevent leaking stack traces (A10:2025).
+
+```python
+# app.py - CSP Configuration
+talisman.init_app(
+    app,
+    content_security_policy={
+        "default-src": "'self'",
+        "script-src": "'self'",  # Blocks inline scripts
+        # ...
+    }
+)
+```
+
+---
+
+## 6. Authentication Failures (A07:2025)
+
+**Threat**: Attackers guessing passwords or hijacking sessions.
+
+**Defenses**:
+1.  **Rate Limiting**: Login is limited to 5 attempts/minute to stop brute-force.
+2.  **Session Management**: `session.clear()` is called on login to prevent Session Fixation.
+3.  **Generic Error Messages**: "Invalid email or password" prevents Account Enumeration.
+
+---
+
+## 7. Software and Data Integrity Failures (A08:2025)
+
+**Threat**: Code or data being tampered with, or insecure deserialization.
+
+**Defenses**:
+1.  **File Upload Sanitization**: Images are re-encoded with **Pillow** to strip malicious metadata/payloads.
+2.  **Signed Sessions**: Flask sessions are cryptographically signed to prevent client-side tampering.
+
+---
+
+## 8. Logging & Alerting Failures (A09:2025)
+
+**Threat**: Security breaches going unnoticed or being impossible to investigate.
+
+**Defenses**:
+1.  **Audit Logging**: Critical actions (Login, Register, Create Report) are logged to `instance/audit.log`.
+2.  **Structured Logs**: Logs include User ID, IP, and Action for easy parsing.
+
+```python
+# security/audit.py
+def log_security_event(event_type, user_id, target_id=None, ip=None):
+    logging.info(f"EVENT={event_type} USER={user_id} TARGET={target_id} IP={ip}")
+```
+
+---
+
+## 9. Cross-Site Request Forgery (CSRF)
+
+*Note: While often merged into other categories, CSRF is a distinct threat we explicitly handle.*
+
+**Defense**: **Synchronizer Token Pattern**. `Flask-WTF` generates a unique token for each session/form.
+
+```html
+<!-- templates/report_new.html -->
+<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- ... -->
+</form>
+```
+
+---
+
+## 10. Denial of Service (DoS)
+
+**Threat**: Resource exhaustion.
+
+**Defenses**:
+1.  **Rate Limiting**: Global and per-endpoint limits.
+2.  **Resource Quotas**: `MAX_CONTENT_LENGTH` (3MB) limits upload sizes.

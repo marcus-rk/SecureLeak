@@ -1,88 +1,92 @@
-# Reports and Uploads (Phase 3–4)
+# Reports and Uploads
 
-A focused reference for the reports feature and the optional image upload added in Phase 4. Keep it simple, secure, and exam‑friendly.
+This document details the implementation of the core reporting feature and the secure file upload system.
 
-## Data model
+---
 
-Table: `reports`
+## 📊 Data Model
 
-- `id` (pk)
-- `owner_id` (fk → users.id)
-- `title` (text, required)
-- `description` (text, required)
-- `severity` (text: `low|medium|high`)
-- `status` (text: `public|private|closed`)
-- `image_name` (text, nullable) — randomized stored filename for a single optional image
-- `created_at` (timestamp)
+**Table**: `reports`
 
-Notes:
-- `image_name` stores only the sanitized, randomized filename. The path is derived as `uploads/<report_id>/<image_name>`.
+| Column | Type | Description |
+|:---|:---|:---|
+| `id` | Integer (PK) | Unique identifier |
+| `owner_id` | Integer (FK) | Link to `users.id` |
+| `title` | Text | Required |
+| `description` | Text | Required |
+| `severity` | Text | `low`, `medium`, `high` |
+| `status` | Text | `public`, `private`, `closed` |
+| `image_name` | Text | Randomized filename (nullable) |
+| `created_at` | Timestamp | Auto-generated |
 
-## Routes
+---
 
-- `GET /reports` — list
-  - Requires login. Shows public reports + your own private reports (auth everywhere).
+## 🛡️ Secure Database Access
 
-- `GET /reports/new` — form
-  - Requires login. Includes CSRF token and supports file upload (multipart form).
+All database interactions go through the `repository` layer, which strictly uses **parameterized queries** to prevent SQL Injection.
 
-- `POST /reports/new` — create
-  - Requires login (CSRF‑protected). Validates title, description, severity, and status (`public|private`).
-  - Optional `image` file input.
-  - On success: 303→`/reports` (PRG).
-  - On error: 400 with a friendly flash.
+```python
+# repository/reports_repo.py
+def create_report(owner_id, title, description, severity, status):
+    db = get_db()
+    # ? placeholders prevent SQL Injection
+    cur = db.execute(
+        "INSERT INTO reports (owner_id, title, description, severity, status) VALUES (?, ?, ?, ?, ?)",
+        (owner_id, title, description, severity, status),
+    )
+    db.commit()
+    return cur.lastrowid
+```
 
-- `GET /reports/<id>` — detail
-  - Requires login. Visible if report is public or you are the owner of a private report; otherwise 404.
+---
 
-- `GET /reports/<id>/image/<name>` — serve image
-  - Requires login. Same visibility rule as detail.
-  - Only serves when `name` equals the DB‑stored `image_name` for that report.
-  - Inline display (`send_from_directory(..., as_attachment=False)`).
+## 📂 Secure File Uploads
 
-## Uploads: constraints (KISS)
+We implement a strict "Defense-in-Depth" strategy for file uploads to prevent malicious files from compromising the server.
 
-- One optional image per report (stored as `image_name`).
-- Validation:
-  - Extension allowlist: `.png`, `.jpg`, `.jpeg`, `.gif` (lowercased)
-  - MIME prefix: `image/`
-  - Size cap: 2 MiB (checked via `request.content_length` when present)
-- Sanitization:
-  - All images are re-processed with Pillow (opened, data copied to new canvas, saved).
-  - This strips EXIF metadata (GPS, camera info) and ensures the file is a valid image.
-- Storage:
-  - Outside `/static`: `uploads/<report_id>/<randomname>.<ext>`
-  - Filenames: `secrets.token_hex()` + `secure_filename`
-- Visibility:
-  - Public → any logged‑in user can fetch
-  - Private → only the owner; unauthorized users get 404 (not 403)
-- Fail‑safe:
-  - If saving fails after creating the report, we show a warning and keep the report (no complex transactions).
+### 1. Validation & Sanitization
+We don't just check the extension; we re-process the image.
 
-## Templates
+```python
+# security/uploads.py
+def store_report_image(file_storage, report_id, base_dir):
+    # 1. Generate secure random filename
+    ext = get_ext(file_storage.filename)
+    random_name = f"{secrets.token_hex(16)}{ext}"
+    
+    # 2. Sanitize content with Pillow (strips EXIF/metadata)
+    img = Image.open(file_storage)
+    img.verify()  # Check if it's really an image
+    
+    # Re-open and save to new buffer to strip metadata
+    file_storage.seek(0)
+    img = Image.open(file_storage)
+    img.save(destination_path)
+```
 
-- `templates/report_new.html` — multipart form with `<input name="image" accept="image/*">`
-- `templates/report_detail.html` — displays thumbnail when `image_name` is present via the secure file route
+### 2. Storage Isolation
+*   **Location**: Uploads are stored **outside** the `static/` folder (`uploads/`).
+*   **Serving**: Files are served via a controlled route that checks permissions, not directly by the web server.
 
-## Configuration
+### 3. Access Control
+*   **Public Reports**: Images are accessible to all logged-in users.
+*   **Private Reports**: Images are only accessible to the owner. Unauthorized access returns `404 Not Found` to avoid leaking existence.
 
-- Base uploads directory is configurable via app config (and `.env`):
-  - `.env`: `UPLOADS_DIR=uploads` (or `instance/uploads` if preferred)
-  - `security/uploads.py` reads `current_app.config["UPLOADS_DIR"]`
-- Tests can override `app.config["UPLOADS_DIR"]` to a temporary folder per test run.
+---
 
-## Security notes (see also `docs/security_model.md`)
+## 🚦 Routes & Logic
 
-- CSRF: forms include `{{ csrf_token() }}`; POSTs are validated by Flask‑WTF.
-- Authorization: a shared helper enforces visibility for detail and file routes.
-- Path safety: only serve `image_name` stored in DB; never trust user paths.
-- XSS: images are served as files and templates remain auto‑escaped (no `|safe`).
+| Method | Route | Description | Security Checks |
+|:---|:---|:---|:---|
+| `GET` | `/reports` | List reports | Shows public + own private reports. |
+| `POST` | `/reports/new` | Create report | CSRF check, Input Validation, Rate Limit. |
+| `GET` | `/reports/<id>` | View report | Checks `is_report_viewable(user, report)`. |
+| `GET` | `/reports/<id>/image/<name>` | Serve image | Checks ownership/visibility before serving. |
 
-## Testing hints
+---
 
-- Use `https` base_url and `Referer` headers (as in the auth tests) to satisfy CSRF/Talisman.
-- Override `UPLOADS_DIR` to a temp dir in tests for isolation.
-- Minimal tests to keep:
-  - Public image: owner and other can GET 200
-  - Private image: non‑owner GET 404; owner GET 200
-  - Disallowed extension: 400
+## 🧪 Testing Strategy
+
+*   **CSRF**: Tests must use `client.post(..., follow_redirects=True)` and handle CSRF tokens.
+*   **Isolation**: Tests override `UPLOADS_DIR` to a temporary directory to avoid cluttering the dev environment.
+*   **Permissions**: We explicitly test that User A cannot view User B's private report.

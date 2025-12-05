@@ -1,44 +1,82 @@
 # Project Overview
 
-A tiny, layered Flask app designed for clarity and exam-friendliness. The goal is to show a secure baseline with simple, readable code and explicit trade‑offs.
+**SecureLeak** is a secure whistleblowing platform designed to demonstrate **Defense-in-Depth** and **Secure-by-Design** principles. It is built as a layered Flask application, prioritizing clarity and explicit security controls over framework magic.
 
-Architecture (high level):
+---
 
+## 🏗️ Architecture
+
+The application follows a clean separation of concerns:
+
+```mermaid
+graph LR
+    Browser --> Routes
+    Routes --> Security_Layer
+    Routes --> Repository
+    Repository --> Database
+    Routes --> Templates
 ```
-Browser → Routes (Blueprints) → Repository (SQL) → SQLite
-         ↘ Templates (Jinja)  ↘ Security (CSRF, headers)
+
+1.  **Routes (`routes/`)**: Minimal HTTP handlers. They validate input format and delegate logic.
+2.  **Security Layer (`security/`)**: Centralized controls for Authentication, Authorization (RBAC), Input Sanitization, and Audit Logging.
+3.  **Repository (`repository/`)**: The *only* place where SQL is executed. Uses parameterized queries to prevent SQL Injection.
+4.  **Database (`database/`)**: SQLite with strict schema enforcement.
+
+---
+
+## ⚙️ Core Configuration
+
+The application is configured to be secure by default. Here is the core configuration from `app.py`:
+
+```python
+# app.py - Security Configuration
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,  # Prevent JS access to session cookie
+    SESSION_COOKIE_SAMESITE="Lax", # Prevent CSRF
+    SESSION_COOKIE_SECURE=True,    # Only send over HTTPS
+    MAX_CONTENT_LENGTH=2 * 1024 * 1024  # Limit uploads to 2MB (DoS prevention)
+)
+
+# Content Security Policy (CSP) via Flask-Talisman
+talisman.init_app(
+    app,
+    content_security_policy={
+        "default-src": "'self'",
+        "script-src": "'self'",  # No inline scripts allowed
+        "style-src": "'self'",
+        "img-src": "'self' data:",
+    },
+    force_https=True
+)
 ```
 
-- App composition
-  - `app.py` uses the app factory pattern, registers Blueprints (`auth`, `reports`), enables CSRF, and sets security headers via Talisman (strict CSP).
-  - Cookie sessions: signed with `SECRET_KEY`; `HttpOnly` and `SameSite=Lax` configured.
-  - Error handlers: 400 (CSRF), 404, 500 render friendly pages.
+---
 
-- Layers
-  - Routes (`routes/`): minimal HTTP handlers per feature. POSTs use PRG (303 See Other → GET).
-  - Repository (`repository/`): parameterized SQL only (prepared‑statement style) to prevent SQLi.
-  - Database (`database/`): connection helpers and migrations (`migrations/init.sql`).
-  - Security (`security/`): pure helpers (Argon2id, email normalize), simple decorators, audit logging, rate limiting.
-  - Templates (`templates/`): Jinja views; a base `layout.html` renders flash messages and nav.
+## 🧩 Key Design Choices
 
-- Dependencies (core)
-  - Flask, Jinja2
-  - Flask‑WTF (CSRFProtect, `generate_csrf`)
-  - Flask‑Talisman (CSP, sane security headers)
-  - Flask-Limiter (Rate limiting)
-  - argon2‑cffi (Argon2id password hashing)
-  - Pillow (Image sanitization)
-  - sqlite3 (via Python stdlib)
+### 1. Defense-in-Depth
+We don't rely on a single control. For example, to prevent XSS, we use:
+*   **Input Validation**: Rejecting bad characters.
+*   **Context-Aware Escaping**: Jinja2 auto-escaping.
+*   **Content Security Policy (CSP)**: Browser-level blocking of unauthorized scripts.
 
-Why these choices:
+### 2. KISS (Keep It Simple, Stupid)
+*   **No ORM**: We use raw SQL with parameterized queries. This makes the data access layer transparent and easier to audit for security.
+*   **SQLite**: Simple, file-based database that requires no complex setup, perfect for this demonstration.
 
-- Keep security controls visible and default‑secure (CSRF, CSP, cookies).
-- Prefer small helpers over heavy frameworks to stay KISS and explainable in an exam.
-- PRG eliminates double‑submit on refresh and avoids resubmitting credentials.
-- Argon2id is the recommended modern password hash with memory hardness.
+### 3. Post-Redirect-Get (PRG)
+All state-changing actions (POST) redirect to a view (GET) upon success. This prevents double-submission of forms and improves user experience.
 
-Trade‑offs:
+---
 
-- Cookie sessions are simple and signed, but still client‑held—store minimal identity only.
-- SQLite keeps setup trivial; not suited for high write concurrency.
-- CSP is restrictive by default; inline scripts are avoided to keep it green.
+## 📦 Tech Stack
+
+*   **Framework**: Flask (Python)
+*   **Database**: SQLite
+*   **Templating**: Jinja2
+*   **Security Libraries**:
+    *   `Flask-Talisman`: HTTP Headers & CSP.
+    *   `Flask-WTF`: CSRF Protection.
+    *   `Argon2-cffi`: State-of-the-art password hashing.
+    *   `Pillow`: Image processing and sanitization.
+    *   `Flask-Limiter`: Rate limiting to prevent brute-force attacks.

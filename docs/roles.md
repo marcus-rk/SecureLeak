@@ -1,91 +1,89 @@
 # Roles, Authorization, and Admin Area
 
-A compact reference for how roles are represented and enforced, and how the Admin dashboard works. The design is intentionally small and explicit to stay exam‑friendly.
+This document details the Role-Based Access Control (RBAC) system and the Admin dashboard.
 
-## Roles
+---
 
-Two roles exist in this app:
+## 🎭 Roles
 
-- user (developer)
-- admin
+The application supports two roles:
 
-Where they live:
+1.  **User**: Standard user. Can create reports and view public reports.
+2.  **Admin**: Superuser. Can view all reports and change their status.
 
-- Database: `users.role` (TEXT CHECK constraint)
-- Session: `session['role']` set at login alongside `session['user_id']`
+**Storage**:
+*   **Database**: `users.role` column.
+*   **Session**: `session['role']` (cached for performance, verified for critical actions).
 
-Why in session?
+---
 
-- Keeps authorization checks cheap and centralized in decorators
-- During login logout boundaries we call `session.clear()` to avoid fixation and then store minimal identity fields only
+## 🔐 Authorization Decorators
 
-## Decorators
+We use custom decorators to enforce access control. This keeps the route logic clean and the security logic centralized.
 
-We use tiny, self‑made decorators in `security/decorators.py`.
+### 1. `@login_required`
+Ensures the user is authenticated. Redirects to login if not.
 
-- `@login_required`
-  - If not authenticated, flash a hint and redirect to `auth.login`.
-- `@require_role('admin')`
-  - If unauthenticated → redirect to login (same as `@login_required`).
-  - If authenticated but wrong role → `abort(404)` (info‑hiding; don’t leak that an admin page exists).
+### 2. `@require_role('admin')`
+Ensures the user has the 'admin' role.
 
-Notes:
+**Defense-in-Depth**:
+For admin actions, we don't just trust the session cookie. We re-verify the role against the database to ensure a demoted admin loses access immediately.
 
-- Returning 404 for unauthorized avoids making role/feature discovery easier.
-- Use 404 consistently for private resources even if authenticated.
+**Information Hiding**:
+If a non-admin tries to access an admin route, we return **404 Not Found** instead of 403 Forbidden. This prevents attackers from mapping out the admin interface.
 
-## Admin Dashboard
+```python
+# security/decorators.py
+def require_role(role: str):
+    def decorator(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            # ... auth check ...
+            
+            # 1. Session Check (Fast)
+            if session.get("role") != role:
+                abort(404) # Hide existence
 
-Minimal, secure dashboard for changing report status. Implemented in `routes/admin.py` with a separate Blueprint.
+            # 2. Database Check (Secure - for admins)
+            if role == "admin":
+                user = get_user_by_id(session["user_id"])
+                if not user or user["role"] != "admin":
+                    session.clear()
+                    abort(404)
+            
+            return view(*args, **kwargs)
+    return decorator
+```
 
-Routes:
+---
 
-- `GET /admin` → dashboard list of recent reports.
-- `POST /admin/reports/<id>/status` → change to `public | private | closed`.
+## 🎛️ Admin Dashboard
 
-Security rules:
+The admin dashboard (`/admin`) allows managing report statuses.
 
-- All admin routes use `@require_role('admin')`.
-- All POST actions include `{{ csrf_token() }}` and are protected by `CSRFProtect`.
-- POSTs validate the requested status against a whitelist.
-- Successful updates use PRG: redirect 303 back to `/admin`.
+**Security Features**:
+*   **Route Protection**: All routes are protected by `@require_role('admin')`.
+*   **CSRF Protection**: All state-changing actions (POST) require a CSRF token.
+*   **Input Validation**: Status updates are whitelisted (`public`, `private`, `closed`).
 
-Repository helpers:
+---
 
-- `repository/reports_repo.py` exposes `update_status(report_id, status)` that enforces a whitelist and uses parameterized SQL.
-- `list_all(limit, offset)` is used by the dashboard to render a compact table including `owner_username`.
+## 📊 Authorization Matrix
 
-Template (`templates/admin_dashboard.html`):
+| Resource | User | Admin | Unauthenticated |
+|:---|:---|:---|:---|
+| **View Public Reports** | ✅ | ✅ | ❌ (Redirect) |
+| **Create Report** | ✅ | ✅ | ❌ (Redirect) |
+| **View Own Private Report** | ✅ | ✅ | ❌ (Redirect) |
+| **View Others' Private Report** | ❌ (404) | ✅ | ❌ (Redirect) |
+| **Admin Dashboard** | ❌ (404) | ✅ | ❌ (Redirect) |
+| **Change Report Status** | ❌ (404) | ✅ | ❌ (Redirect) |
 
-- A simple table with one row per report and three POST buttons (Public, Private, Close), each as a tiny form with CSRF.
-- Keeps styling consistent with the rest of the app (`.card`, `.actions`).
+---
 
-## Authorization Matrix (short)
+## 🧪 Testing Strategy
 
-| Resource | user | admin |
-|:---------|:-----|:------|
-| /reports (list/detail/new) | ✅ | ✅ |
-| /reports/<id>/comment (POST) | ✅ (public or own private) | ✅ |
-| /admin | ❌ (404) | ✅ |
-| /admin/reports/<id>/status (POST) | ❌ (404) | ✅ |
-
-## Status & Visibility
-
-Report `status` values:
-
-- `public` → visible to all authenticated users
-- `private` → visible to owner and admins
-- `closed` → treated like public/private for visibility, but signals no new work; rendering remains the same (simplicity)
-
-Admin actions only change the `status` field; they do not edit content or ownership.
-
-## Testing Hints
-
-- Use `https` base_url and a Referer header for CSRF‑related tests (consistent with existing tests).
-- Non‑admin access to `/admin` and `/admin/.../status` should 404 when logged in, and redirect to login when not.
-- Changing status should 303 back to `/admin` and flash Success.
-
-## Trade‑offs
-
-- Decorators are simple and explicit — good for teaching and small projects. Larger apps might use Flask‑Login or a policy engine (e.g., Flask‑Principal) for more complex rules.
-- The dashboard is intentionally minimal: no pagination or search (KISS). For larger datasets, extend `list_all` and add filters.
+*   **Role Enforcement**: Test that a normal user gets a 404 when accessing `/admin`.
+*   **Privilege Escalation**: Test that modifying the session cookie (if possible) doesn't grant admin access without DB validation.
+*   **Status Changes**: Verify that only admins can change a report's status.
