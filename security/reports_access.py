@@ -3,13 +3,18 @@ from __future__ import annotations
 from typing import Optional
 
 
-def is_report_viewable(report: dict, user_id: Optional[int]) -> bool:
+def is_report_viewable(report: dict, user_id: Optional[int], role: Optional[str] = None) -> bool:
     """Return True if the report is viewable by the given user.
 
-    Policy: public → any authenticated user; private → only the owner.
+    Policy: public → any authenticated user; private → only the owner OR admin.
     """
     if not report:
         return False
+    
+    # Admin override (can see everything)
+    if role == "admin":
+        return True
+
     status = report.get("status")
     if status == "public":
         return True

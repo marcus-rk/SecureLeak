@@ -102,7 +102,8 @@ def view_report(report_id: int) -> ResponseReturnValue:
 
     # Authorization: private reports visible only to owner; return 404 to avoid info leakage
     uid = session.get("user_id")
-    if not is_report_viewable(report, uid):
+    role = session.get("role")
+    if not is_report_viewable(report, uid, role):
         abort(404)
     comments = comments_repo.list_comments_for_report(report_id)
     return render_template("report_detail.html", report=report, comments=comments), 200
@@ -115,7 +116,8 @@ def add_comment(report_id: int) -> ResponseReturnValue:
     if not report:
         abort(404)
     uid = session.get("user_id")
-    if not is_report_viewable(report, uid):
+    role = session.get("role")
+    if not is_report_viewable(report, uid, role):
         # Preserve info-hiding policy
         abort(404)
 
@@ -140,7 +142,8 @@ def report_file(report_id: int, name: str) -> ResponseReturnValue:
         abort(404)
     # Visibility: same rule as detail
     uid = session.get("user_id")
-    if not is_report_viewable(report, uid):
+    role = session.get("role")
+    if not is_report_viewable(report, uid, role):
         abort(404)
     # Path safety: only serve the exact stored image_name
     if not report.get("image_name") or name != report.get("image_name"):

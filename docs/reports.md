@@ -85,7 +85,7 @@ def store_report_image(file: FileStorage, report_id: int, base_dir: Optional[str
 |:---|:---|:---|:---|
 | `GET` | `/reports` | List reports | Shows public + own private reports. |
 | `POST` | `/reports/new` | Create report | CSRF check, Input Validation, Rate Limit. |
-| `GET` | `/reports/<id>` | View report | Checks `is_report_viewable(user, report)`. |
+| `GET` | `/reports/<id>` | View report | Checks `is_report_viewable(user, report, role)`. |
 | `GET` | `/reports/<id>/image/<name>` | Serve image | Checks ownership/visibility before serving. |
 
 ---

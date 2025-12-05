@@ -59,11 +59,20 @@ report_id = int(request.view_args['report_id'])
 **Reflection for Report**:
 > "Input validation is the first line of defense. By using **Allowlisting** (only accepting known good values) rather than Blocklisting (trying to guess bad values), we significantly reduce the attack surface. If the data isn't 'low', 'medium', or 'high', it is rejected immediately."
 
+### 🛡️ Broken Access Control (IDOR)
+**Concept**: Preventing users from accessing resources they don't own.
+**Implementation**: `security/reports_access.py`
+**Key Snippet**:
 ```python
 # security/reports_access.py
-def is_report_viewable(report: dict, user_id: Optional[int]) -> bool:
+def is_report_viewable(report: dict, user_id: Optional[int], role: Optional[str] = None) -> bool:
     if not report:
         return False
+    
+    # Admin override (can see everything)
+    if role == "admin":
+        return True
+
     status = report.get("status")
     if status == "public":
         return True
@@ -71,14 +80,6 @@ def is_report_viewable(report: dict, user_id: Optional[int]) -> bool:
         return user_id is not None and user_id == report.get("owner_id")
     # Unknown status: default deny
     return False
-```mplementation**: `security/reports_access.py`
-**Key Snippet**:
-```python
-def is_report_viewable(report, user_id):
-    if report['status'] == 'public':
-        return True
-    # Private: only owner or admin can see
-    return user_id and (report['owner_id'] == user_id or session.get('role') == 'admin')
 ```
 **Reflection for Report**:
 > "We implement **Attribute-Based Access Control (ABAC)** logic at the data retrieval level. It is not enough to check if a user is logged in; we must check if *this* user owns *this* specific resource. This prevents IDOR attacks where valid IDs are guessed."
