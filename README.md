@@ -3,18 +3,13 @@
 > *A minimal, educational bug tracker built to study and prevent web vulnerabilities.*
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.x-black?logo=flask)
-![SQLite](https://img.shields.io/badge/SQLite-07405E?logo=sqlite&logoColor=white)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?logo=javascript&logoColor=black)
-![Argon2](https://img.shields.io/badge/Password-Argon2-7952B3)
-![FlaskWTF](https://img.shields.io/badge/Forms-CSRF_Protected-green)
-![FlaskTalisman](https://img.shields.io/badge/Headers-CSP%2FHSTS-orange)
-![FlaskLimiter](https://img.shields.io/badge/DoS-Rate_Limiting-red)
-![Pillow](https://img.shields.io/badge/Uploads-Sanitized-yellow)
-![Werkzeug](https://img.shields.io/badge/WSGI-Werkzeug-gray)
-![Security](https://img.shields.io/badge/Focus-Web_Security-critical)
+![Flask](https://img.shields.io/badge/Flask-3.0.3-black?logo=flask)
+![SQLite](https://img.shields.io/badge/SQLite-3-07405E?logo=sqlite&logoColor=white)
+![Argon2](https://img.shields.io/badge/Argon2_cffi-23.1.0-7952B3)
+![FlaskWTF](https://img.shields.io/badge/Flask_WTF-1.2.1-green)
+![FlaskTalisman](https://img.shields.io/badge/Flask_Talisman-1.0.0-orange)
+![FlaskLimiter](https://img.shields.io/badge/Flask_Limiter-3.8.0-red)
+![Pillow](https://img.shields.io/badge/Pillow-10.3.0-yellow)
 [![CI - Lint and Security](https://github.com/marcus-rk/SecureLeak/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/marcus-rk/SecureLeak/actions/workflows/ci.yml)
 
 ---

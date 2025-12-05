@@ -20,16 +20,25 @@ Before processing data, we validate that it meets expected formats.
 
 ```python
 # routes/reports.py - Validation Logic
+@reports_bp.route("/new", methods=["POST"])
+@login_required
 @limiter.limit("10 per hour")
 def new_report_post() -> ResponseReturnValue:
     title = (request.form.get("title") or "").strip()
+    description = (request.form.get("description") or "").strip()
     severity = (request.form.get("severity") or "").strip().lower()
+    status = (request.form.get("status") or "").strip().lower()
+    file = request.files.get("image")
 
-    if not title:
-        return _report_bad_request("Title is required.")
+    if not title or not description:
+        return _report_bad_request("Title and description are required.")
 
     if severity not in {"low", "medium", "high"}:
         return _report_bad_request("Invalid severity.")
+
+    # Creation policy: only allow public/private at creation time
+    if status not in {"public", "private"}:
+        return _report_bad_request("Invalid status. Choose public or private.")
     
     # ...
 ```

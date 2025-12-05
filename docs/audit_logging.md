@@ -27,15 +27,26 @@ We use a structured text format for simplicity and readability:
 
 ```python
 # security/audit.py
-def log_security_event(action, user_id=None, target_id=None, ip=None):
-    _configure_logger()
-    extra = {
-        "ip": ip or "unknown",
-        "user_id": str(user_id) if user_id else "anon",
-        "action": action,
-        "target_id": str(target_id) if target_id else "-",
-    }
-    _audit_logger.info("", extra=extra)
+def log_security_event(
+    action: str,
+    user_id: Optional[int] = None,
+    target_id: Optional[str] = None,
+    ip: Optional[str] = None,
+) -> None:
+    """Log a security-relevant event to the audit log."""
+    try:
+        _configure_logger()
+        extra = {
+            "ip": ip or "unknown",
+            "user_id": str(user_id) if user_id else "anon",
+            "target_id": str(target_id) if target_id else "-",
+            "action": action,
+        }
+        # We pass the message as empty because all info is in the formatter/extra
+        _audit_logger.info("", extra=extra)
+    except Exception:
+        # Fail safe: never crash the app because logging failed
+        pass
 ```
 
 ### Logged Events

@@ -36,23 +36,30 @@ If a non-admin tries to access an admin route, we return **404 Not Found** inste
 ```python
 # security/decorators.py
 def require_role(role: str):
+    required = (role or "").lower()
+
     def decorator(view):
         @wraps(view)
         def wrapped(*args, **kwargs):
-            # ... auth check ...
-            
-            # 1. Session Check (Fast)
-            if session.get("role") != role:
-                abort(404) # Hide existence
+            # ... (login check omitted) ...
 
-            # 2. Database Check (Secure - for admins)
-            if role == "admin":
-                user = get_user_by_id(session["user_id"])
-                if not user or user["role"] != "admin":
-                    session.clear()
+            # Cheap session role check first
+            sess_role = (session.get("role") or "").lower()
+            if sess_role != required:
+                abort(404)
+
+            # Defense-in-depth: verify DB role for admins
+            if required == "admin":
+                try:
+                    user = get_user_by_id(int(uid))
+                except Exception:
+                    user = None
+                db_role = ((user or {}).get("role") or "").lower()
+                if db_role != "admin":
                     abort(404)
-            
+
             return view(*args, **kwargs)
+        return wrapped
     return decorator
 ```
 

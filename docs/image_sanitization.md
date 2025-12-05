@@ -21,11 +21,17 @@ Instead of just validating the file extension, we perform a "transcoding" step:
 
 ### Code Snippet
 ```python
-with Image.open(file) as img:
-    data = list(img.getdata())
-    clean_img = Image.new(img.mode, img.size)
-    clean_img.putdata(data)
-    clean_img.save(dest_path)
+# security/uploads.py
+    # Sanitize image: Open with Pillow, strip metadata, and save fresh
+    # This removes EXIF data (GPS, camera info) and re-encodes the pixels
+    with Image.open(file) as img:
+        # Convert to RGB to handle PNGs with transparency if saving as JPEG,
+        # but here we keep original format. Pillow saves without metadata by default.
+        # We create a new image to ensure no hidden data is copied over.
+        data = list(img.getdata())
+        clean_img = Image.new(img.mode, img.size)
+        clean_img.putdata(data)
+        clean_img.save(str(dest_path))
 ```
 
 ## Benefits

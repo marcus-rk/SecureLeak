@@ -30,23 +30,28 @@ The application is configured to be secure by default. Here is the core configur
 
 ```python
 # app.py - Security Configuration
-app.config.update(
-    SESSION_COOKIE_HTTPONLY=True,  # Prevent JS access to session cookie
-    SESSION_COOKIE_SAMESITE="Lax", # Prevent CSRF
-    SESSION_COOKIE_SECURE=True,    # Only send over HTTPS
-    MAX_CONTENT_LENGTH=2 * 1024 * 1024  # Limit uploads to 2MB (DoS prevention)
+app.config.from_mapping(
+    # ...
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=not app.debug,
+    MAX_CONTENT_LENGTH=3 * 1024 * 1024,
 )
 
 # Content Security Policy (CSP) via Flask-Talisman
-talisman.init_app(
+Talisman(
     app,
-    content_security_policy={
-        "default-src": "'self'",
-        "script-src": "'self'",  # No inline scripts allowed
-        "style-src": "'self'",
-        "img-src": "'self' data:",
+    content_security_policy={ 
+        "default-src": "'self'", 
+        "script-src": "'self'", 
+        "style-src": "'self'", 
+        "object-src": "'none'", 
+        "frame-ancestors": "'none'",
+        "form-action": "'self'",
+        "base-uri": "'self'"
     },
-    force_https=True
+    force_https=not app.debug,
+    strict_transport_security=True
 )
 ```
 

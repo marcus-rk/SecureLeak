@@ -38,9 +38,9 @@ We use **Argon2id**, the winner of the Password Hashing Competition, configured 
 def build_hasher() -> PasswordHasher:
     """Create a PasswordHasher with explicit Argon2id parameters."""
     return PasswordHasher(
-        time_cost=3,        # Iterations
-        memory_cost=65536,  # 64 MiB RAM usage
-        parallelism=2,      # Threads
+        time_cost=3,
+        memory_cost=65536,  # 64 MiB
+        parallelism=2,
         hash_len=32,
         salt_len=16,
     )
@@ -61,6 +61,14 @@ We use Flask's secure cookie sessions with the following attributes enforced in 
 
 **Session Fixation Protection**:
 We explicitly call `session.clear()` before setting the user identity upon successful login.
+
+```python
+# routes/auth.py
+    maybe_upgrade_hash(_hasher, user, password, users_repo.update_user)
+
+    # Session fixation defense and identity establishment
+    _establish_session(user)
+```
 
 ---
 

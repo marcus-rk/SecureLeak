@@ -11,10 +11,10 @@ This document is designed to assist in writing the final exam report. It highlig
 **Implementation**: `repository/reports_repo.py`
 **Key Snippet**:
 ```python
-# ✅ Parameterized Query (The "Question Mark" Style)
+# repository/reports_repo.py
 cur = db.execute(
-    "INSERT INTO reports (title, ...) VALUES (?, ...)",
-    (title, ...)
+    "INSERT INTO reports (owner_id, title, description, severity, status) VALUES (?, ?, ?, ?, ?)",
+    (owner_id, title, description, severity, status),
 )
 ```
 **Reflection for Report**:
@@ -26,20 +26,28 @@ cur = db.execute(
 **Key Snippet**:
 ```python
 # app.py - Content Security Policy (Defense-in-Depth)
-content_security_policy={ 
-    "default-src": "'self'", 
-    "script-src": "'self'",  # No inline scripts allowed!
-    "object-src": "'none'", 
-    "base-uri": "'self'"
-}
-```
-**Reflection for Report**:
-> "We employ a dual-layer defense. **Layer 1** is Jinja2's context-aware auto-escaping, which converts `<script>` to `&lt;script&gt;`. **Layer 2** is a strict **Content Security Policy (CSP)** that forbids inline JavaScript (`unsafe-inline`). Even if an attacker bypasses the auto-escaping, the browser will refuse to execute the injected script."
+Talisman(
+    app,
+    content_security_policy={ 
+        "default-src": "'self'", 
+        "script-src": "'self'", 
+        "style-src": "'self'", 
+        "object-src": "'none'", 
+        "frame-ancestors": "'none'",
+        "form-action": "'self'",
+        "base-uri": "'self'"
+    },
+    force_https=not app.debug,
+    strict_transport_security=True
+)
+```python
+# routes/reports.py
+if severity not in {"low", "medium", "high"}:
+    return _report_bad_request("Invalid severity.")
 
-### 🛡️ Input Validation (Pre-Defense)
-**Concept**: Rejecting malformed data before it reaches the database or logic.
-**Implementation**: `routes/reports.py`
-**Key Snippet**:
+# Type enforcement is handled by Flask routing:
+# @reports_bp.route("/<int:report_id>", methods=["GET"])
+```ey Snippet**:
 ```python
 # Allowlisting valid values
 if severity not in {"low", "medium", "high"}:
@@ -51,13 +59,19 @@ report_id = int(request.view_args['report_id'])
 **Reflection for Report**:
 > "Input validation is the first line of defense. By using **Allowlisting** (only accepting known good values) rather than Blocklisting (trying to guess bad values), we significantly reduce the attack surface. If the data isn't 'low', 'medium', or 'high', it is rejected immediately."
 
----
-
-## 2. Broken Access Control (IDOR & RBAC)
-
-### 🛡️ Insecure Direct Object References (IDOR)
-**Concept**: Preventing User A from viewing User B's private data by changing an ID in the URL (`/reports/123`).
-**Implementation**: `security/reports_access.py`
+```python
+# security/reports_access.py
+def is_report_viewable(report: dict, user_id: Optional[int]) -> bool:
+    if not report:
+        return False
+    status = report.get("status")
+    if status == "public":
+        return True
+    if status == "private":
+        return user_id is not None and user_id == report.get("owner_id")
+    # Unknown status: default deny
+    return False
+```mplementation**: `security/reports_access.py`
 **Key Snippet**:
 ```python
 def is_report_viewable(report, user_id):
@@ -71,15 +85,16 @@ def is_report_viewable(report, user_id):
 
 ---
 
-## 3. Cryptographic Failures (Password Storage)
-
-### 🛡️ Hashing Strategy
-**Concept**: Storing passwords securely to resist cracking if the DB is leaked.
-**Implementation**: `security/auth_utils.py`
-**Key Snippet**:
 ```python
+# security/auth_utils.py
 PasswordHasher(
-    time_cost=3,        # Iterations
+    time_cost=3,
+    memory_cost=65536,  # 64 MiB
+    parallelism=2,
+    hash_len=32,
+    salt_len=16,
+)
+``` time_cost=3,        # Iterations
     memory_cost=65536,  # 64 MiB RAM usage
     parallelism=2,      # Threads
     hash_len=32,
@@ -98,15 +113,21 @@ PasswordHasher(
 **Implementation**: `security/uploads.py`
 **Key Snippet**:
 ```python
-# 1. Randomize Filename (Prevents path traversal & overwrites)
-dest_name = secure_filename(secrets.token_hex(16) + ext)
+# security/uploads.py
+ext = get_ext(file.filename or "")
+rnd = secrets.token_hex(16) + ext
+dest_name = secure_filename(rnd)
 
-# 2. Content Sanitization (Pillow)
+# ...
+
 with Image.open(file) as img:
-    # Re-writing the image strips EXIF metadata and malicious payloads
+    # Convert to RGB to handle PNGs with transparency if saving as JPEG,
+    # but here we keep original format. Pillow saves without metadata by default.
+    # We create a new image to ensure no hidden data is copied over.
+    data = list(img.getdata())
     clean_img = Image.new(img.mode, img.size)
-    clean_img.putdata(list(img.getdata()))
-    clean_img.save(dest_path)
+    clean_img.putdata(data)
+    clean_img.save(str(dest_path))
 ```
 **Reflection for Report**:
 > "File uploads are dangerous. We mitigate this by: 1) **Allowlisting** extensions, 2) **Randomizing** filenames to prevent overwriting or directory traversal, and 3) **Re-encoding** the image using Pillow. This 'sanitization by reconstruction' ensures that even if a file *looks* like a JPG but contains hidden code, that code is stripped out during the save process."
@@ -121,13 +142,20 @@ with Image.open(file) as img:
 **Key Snippet**:
 ```python
 # routes/auth.py
-session.clear()  # Destroy old session (Fixation defense)
-session["user_id"] = user["id"]
+# Session fixation defense and identity establishment
+_establish_session(user)
+
+# security/auth_utils.py
+def _establish_session(user: dict) -> None:
+    session.clear()
+    session["user_id"] = user["id"]
 
 # app.py
-SESSION_COOKIE_HTTPONLY = True  # JS cannot read cookie
-SESSION_COOKIE_SAMESITE = "Lax" # CSRF protection
-SESSION_COOKIE_SECURE = True    # HTTPS only
+app.config.from_mapping(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=not app.debug,
+)
 ```
 **Reflection for Report**:
 > "To prevent **Session Fixation**, we regenerate the session ID (`session.clear()`) immediately upon login. To prevent **Session Hijacking** via XSS, we set the `HttpOnly` flag. We also use `SameSite=Lax` to provide a robust default defense against CSRF."

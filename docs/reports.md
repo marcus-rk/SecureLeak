@@ -27,9 +27,8 @@ All database interactions go through the `repository` layer, which strictly uses
 
 ```python
 # repository/reports_repo.py
-def create_report(owner_id, title, description, severity, status):
+def create_report(owner_id: int, title: str, description: str, severity: str, status: str) -> int:
     db = get_db()
-    # ? placeholders prevent SQL Injection
     cur = db.execute(
         "INSERT INTO reports (owner_id, title, description, severity, status) VALUES (?, ?, ?, ?, ?)",
         (owner_id, title, description, severity, status),
@@ -48,22 +47,28 @@ We implement a strict "Defense-in-Depth" strategy for file uploads to prevent ma
 We don't just check the extension; we re-process the image.
 
 ```python
+```python
 # security/uploads.py
-def store_report_image(file_storage, report_id, base_dir):
-    # 1. Generate secure random filename
-    ext = get_ext(file_storage.filename)
-    random_name = f"{secrets.token_hex(16)}{ext}"
+def store_report_image(file: FileStorage, report_id: int, base_dir: Optional[str] = None) -> str:
+    # ...
+    ext = get_ext(file.filename or "")
+    rnd = secrets.token_hex(16) + ext
+    dest_name = secure_filename(rnd)
     
-    # 2. Sanitize content with Pillow (strips EXIF/metadata)
-    img = Image.open(file_storage)
-    img.verify()  # Check if it's really an image
+    # ...
     
-    # Re-open and save to new buffer to strip metadata
-    file_storage.seek(0)
-    img = Image.open(file_storage)
-    img.save(destination_path)
-```
+    # Sanitize image: Open with Pillow, strip metadata, and save fresh
+    with Image.open(file) as img:
+        # Convert to RGB to handle PNGs with transparency if saving as JPEG,
+        # but here we keep original format. Pillow saves without metadata by default.
+        # We create a new image to ensure no hidden data is copied over.
+        data = list(img.getdata())
+        clean_img = Image.new(img.mode, img.size)
+        clean_img.putdata(data)
+        clean_img.save(str(dest_path))
 
+    return dest_name
+```
 ### 2. Storage Isolation
 *   **Location**: Uploads are stored **outside** the `static/` folder (`uploads/`).
 *   **Serving**: Files are served via a controlled route that checks permissions, not directly by the web server.

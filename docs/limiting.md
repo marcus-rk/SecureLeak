@@ -36,7 +36,7 @@ These apply to all endpoints unless a specific override is defined.
 ```python
 # security/limiter.py
 limiter = Limiter(
-    get_remote_address,
+    key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://",
 )
@@ -44,7 +44,7 @@ limiter = Limiter(
 # routes/auth.py
 @auth_bp.route("/login", methods=["POST"])
 @limiter.limit("5 per minute")
-def login_post():
+def login_post() -> ResponseReturnValue:
     # ...
 ```
 

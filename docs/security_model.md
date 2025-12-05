@@ -15,13 +15,25 @@ This document outlines the threat model for **SecureLeak** and the specific defe
 
 ```python
 # security/decorators.py
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get("role") != "admin":
-            abort(404) # Hide existence
-        return f(*args, **kwargs)
-    return decorated_function
+def require_role(role: str):
+    required = (role or "").lower()
+
+    def decorator(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            # ...
+            # Cheap session role check first
+            sess_role = (session.get("role") or "").lower()
+            if sess_role != required:
+                abort(404)
+
+            # Defense-in-depth: verify DB role for admins
+            if required == "admin":
+                # ... verify against DB ...
+            
+            return view(*args, **kwargs)
+        return wrapped
+    return decorator
 ```
 
 ---
@@ -80,13 +92,19 @@ cursor.execute(
 
 ```python
 # app.py - CSP Configuration
-talisman.init_app(
+Talisman(
     app,
-    content_security_policy={
-        "default-src": "'self'",
-        "script-src": "'self'",  # Blocks inline scripts
-        # ...
-    }
+    content_security_policy={ 
+        "default-src": "'self'", 
+        "script-src": "'self'", 
+        "style-src": "'self'", 
+        "object-src": "'none'", 
+        "frame-ancestors": "'none'",
+        "form-action": "'self'",
+        "base-uri": "'self'"
+    },
+    force_https=not app.debug,
+    strict_transport_security=True
 )
 ```
 
@@ -116,15 +134,32 @@ talisman.init_app(
 ## 8. Logging & Alerting Failures (A09:2025)
 
 **Threat**: Security breaches going unnoticed or being impossible to investigate.
-
-**Defenses**:
-1.  **Audit Logging**: Critical actions (Login, Register, Create Report) are logged to `instance/audit.log`.
-2.  **Structured Logs**: Logs include User ID, IP, and Action for easy parsing.
-
 ```python
 # security/audit.py
-def log_security_event(event_type, user_id, target_id=None, ip=None):
-    logging.info(f"EVENT={event_type} USER={user_id} TARGET={target_id} IP={ip}")
+def log_security_event(
+    action: str,
+    user_id: Optional[int] = None,
+    target_id: Optional[str] = None,
+    ip: Optional[str] = None,
+) -> None:
+    # ...
+    try:
+        _configure_logger()
+        extra = {
+            "ip": ip or "unknown",
+            "user_id": str(user_id) if user_id else "anon",
+            "target_id": str(target_id) if target_id else "-",
+            "action": action,
+        }
+        # We pass the message as empty because all info is in the formatter/extra
+        _audit_logger.info("", extra=extra)
+    except Exception:
+        pass
+```     "user_id": str(user_id) if user_id else "anon",
+        "action": action,
+        "target_id": str(target_id) if target_id else "-",
+    }
+    _audit_logger.info("", extra=extra)
 ```
 
 ---
