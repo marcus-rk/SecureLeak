@@ -342,8 +342,11 @@ def internal_error(_e):
 ### 💡 Why Flask?
 > "We chose Flask over Django for this educational project because Flask is 'explicit'. In Django, much of the security (CSRF, Auth) happens 'magically' in the background. In Flask, we had to manually configure `Talisman`, `CSRFProtect`, and `LoginManager`, which demonstrates a deeper understanding of *how* these mechanisms actually work."
 
-### 💡 KISS Principle (Keep It Simple, Stupid)
-> "Complexity is the worst enemy of security. By using **SQLite** and standard **Flask** patterns, we reduced the attack surface. A complex microservices architecture might have introduced more vulnerabilities (e.g., insecure inter-service communication) than it solved for this scale."
+### 💡 SSR (Server-Side Rendering) vs. CSR (Client-Side Rendering)
+> "We deliberately chose **SSR** (Flask/Jinja2) over a CSR framework (React/Vue) for security reasons:
+> 1.  **Reduced Data Exposure**: In CSR, APIs often over-fetch data (sending full user objects), relying on the frontend to hide it. In SSR, the server renders *only* what the user is allowed to see, preventing data leaks via network inspection.
+> 2.  **Session Security**: CSR apps often store tokens in `localStorage` (vulnerable to XSS). We use `HttpOnly` cookies, which are invisible to JavaScript, neutralizing token theft even if XSS occurs.
+> 3.  **Simpler Access Control**: With SSR, we don't need complex CORS configurations (a common source of misconfiguration). Everything is served from `'self'`, simplifying our Content Security Policy."
 
 ### 💡 Defense-in-Depth
 > "We never rely on a single control. For example, XSS is blocked by **Auto-escaping** AND **CSP**. CSRF is blocked by **SameSite cookies** AND **CSRF Tokens**. Admin access is checked in the **Session** AND verified against the **Database** on every request. If one layer fails, the next catches the attack."
