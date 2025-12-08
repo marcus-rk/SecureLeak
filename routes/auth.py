@@ -103,9 +103,6 @@ def logout() -> ResponseReturnValue:
     session.clear()
     flash("Signed out.", "info")
     return redirect(url_for("auth.login"), 303)
-    session.clear()
-    flash("Signed out.", "info")
-    return redirect(url_for("auth.login"), 303)
 
 
 # --- Micro-helpers (keep routes small and readable) ---
