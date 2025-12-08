@@ -66,7 +66,7 @@ def new_report_post() -> ResponseReturnValue:
     if status not in {"public", "private"}:
         return _report_bad_request("Invalid status. Choose public or private.")
 
-    # Validate optional upload (KISS): small checks before creating report
+    # Validate optional upload: small checks before creating report
     if file and file.filename:
         ext = get_ext(file.filename)
         if not is_allowed_ext(ext):
@@ -80,8 +80,7 @@ def new_report_post() -> ResponseReturnValue:
     report_id = reports_repo.create_report(owner_id, title, description, severity, status)
     log_security_event("CREATE_REPORT", user_id=owner_id, target_id=str(report_id), ip=request.remote_addr)
 
-    # Save file after report exists; on failure, continue without image (KISS)
-    # Save file after report exists; on failure, continue without image (KISS)
+    # Save file after report exists; on failure, continue without image
     if file and file.filename:
         try:
             dest_name = store_report_image(file, report_id, uploads_base_dir())
