@@ -11,6 +11,7 @@ from PIL import Image
 
 ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".gif"}
 MAX_UPLOAD_BYTES = 2 * 1024 * 1024  # 2 MiB
+MAX_IMAGE_DIMENSION = 2048 # Max width/height in pixels for uploaded images
 
 
 def uploads_base_dir() -> str:
@@ -53,6 +54,10 @@ def store_report_image(file: FileStorage, report_id: int, base_dir: Optional[str
     # Sanitize image: Open with Pillow, strip metadata, and save fresh
     # This removes EXIF data (GPS, camera info) and re-encodes the pixels
     with Image.open(file) as img:
+        # Check dimensions to prevent extremely large images
+        if img.width > MAX_IMAGE_DIMENSION or img.height > MAX_IMAGE_DIMENSION:
+            raise ValueError(f"Image dimensions too large. Max {MAX_IMAGE_DIMENSION}x{MAX_IMAGE_DIMENSION} pixels.")
+
         # Convert to RGB to handle PNGs with transparency if saving as JPEG,
         # but here we keep original format. Pillow saves without metadata by default.
         # We create a new image to ensure no hidden data is copied over.

@@ -71,6 +71,7 @@ app.config.from_mapping(
 
 *   **File Uploads**:
     *   Strictly validated for file type (PNG, JPG, GIF) and MIME type.
+    *   **Pixel Dimensions**: Images are limited to **2048x2048 pixels** to prevent "Decompression Bomb" attacks that exhaust server RAM.
     *   Files are renamed upon storage to prevent directory traversal or overwriting critical files.
 
 ---

@@ -86,6 +86,8 @@ def new_report_post() -> ResponseReturnValue:
             dest_name = store_report_image(file, report_id, uploads_base_dir())
             # one-file-per-report: update stored name
             reports_repo.update_report(report_id, {"image_name": dest_name})
+        except ValueError as e:
+            flash(f"Report created but image skipped: {e}", "warning")
         except Exception:
             flash("Report created but image could not be saved.", "warning")
     flash("Report created.", "success")
