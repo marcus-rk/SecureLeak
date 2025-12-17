@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import List
 import sys
 
+from io import BytesIO
+from werkzeug.datastructures import FileStorage
+
 # Allow running this file directly (python seed/seed_runner.py)
 # by adding the project root to sys.path before importing app.
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -132,24 +135,17 @@ def main() -> None:
             # Attach image to ~35% of reports (only if pre-committed images exist)
             if random.random() < 0.35 and placeholder_images:
                 try:
-                    # Pick a random seed image
                     src = random.choice(placeholder_images)
-                    with src.open("rb") as f:
-                        # store_report_image expects a FileStorage-like; emulate minimal API via a shim
-                        class _FS:
-                            def __init__(self, filename: str, data: bytes):
-                                self.filename = filename
-                                self.mimetype = "image/png"
-                                self._data = data
-
-                            def save(self, dst: str) -> None:
-                                Path(dst).write_bytes(self._data)
-
-                        fs = _FS(src.name, f.read())
-                        dest_name = store_report_image(fs, rid, uploads_base_dir())
-                        reports_repo.update_report(rid, {"image_name": dest_name})
-                except Exception:
-                    pass
+                    data = src.read_bytes()
+                    fs = FileStorage(
+                        stream=BytesIO(data),
+                        filename=src.name,
+                        content_type="image/png",
+                    )
+                    dest_name = store_report_image(fs, rid, uploads_base_dir())
+                    reports_repo.update_report(rid, {"image_name": dest_name})
+                except Exception as e:
+                    print(f"[seed] failed attaching {src.name} to report {rid}: {e}", file=sys.stderr)
 
         # 6) Insert comments (0–8 per report, skew toward 0–3)
         max_total_comments = 250
