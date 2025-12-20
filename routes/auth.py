@@ -67,7 +67,6 @@ def register() -> ResponseReturnValue:
 @limiter.limit("3 per hour")
 def register_post() -> ResponseReturnValue:
     email_raw = request.form.get("email", "")
-    email_raw = request.form.get("email", "")
     email = normalize_and_validate_email(email_raw)
     password = request.form.get("password", "")
     username = (request.form.get("username") or "").strip()
@@ -89,7 +88,6 @@ def register_post() -> ResponseReturnValue:
         return _register_conflict("Email already registered.")
 
     pwd_hash = _hasher.hash(password)
-    # Fallback safety: ensure a non-empty username is stored
     uid = users_repo.create_user(email=email, password_hash=pwd_hash, username=username or email, role=role)
     log_security_event("REGISTER_USER", user_id=uid, ip=request.remote_addr)
     flash("Account created. Please sign in.", "success")
@@ -134,11 +132,6 @@ def _register_conflict(msg: str) -> ResponseReturnValue:
 
 
 def _establish_session(user: dict) -> None:
-    """Reset session (fixation defense) and set minimal identity (user_id, role).
-    Sessions are signed cookies; HttpOnly/SameSite flags are set in app.py.
-    """
-    # Drop any pre-auth or attacker-influenced keys before we set identity
     session.clear()
-    # Minimal identity: who the user is and, optionally, their role
     session["user_id"] = user["id"]
     session["role"] = (user.get("role") or "user").lower()
