@@ -12,6 +12,8 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
+Triage labels track an issue's workflow state. Every issue also gets one type label for its kind: `bug`, `enhancement` or `documentation`.
+
 These labels may not exist yet in this repository. Check with `gh label list` and ask the owner before creating any.
 
 Edit the right-hand column to match whatever vocabulary you actually use.
