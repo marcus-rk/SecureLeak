@@ -67,6 +67,7 @@ jobs:
           
       # Pin versions for reproducibility and stable annotations.
       # Tip: update periodically to pick up new rules/perf.
+      # Keep this version in sync with ruff in requirements-dev.txt.
       - name: Install Ruff (pinned)
         if: ${{ steps.filter_python.outputs.changed == 'true' }}
         run: pip install "ruff==0.5.7"
@@ -166,6 +167,7 @@ jobs:
           filters: |
             changed:
               - 'requirements.txt'
+              - 'requirements-dev.txt'
               - '**/*.py'
 
       - name: Set up Python 3.11 (pip cache)
@@ -198,7 +200,7 @@ jobs:
         id: pip_audit
         continue-on-error: true
         if: ${{ steps.filter.outputs.changed == 'true' }}
-        run: pip-audit -r requirements.txt
+        run: pip-audit -r requirements.txt -r requirements-dev.txt
         # Checks installed requirement versions against known CVEs.
         # For lockfiles, use the corresponding flag (e.g., -r, -P, etc.).
 
@@ -234,6 +236,7 @@ jobs:
               - 'static/**'
               - 'pytest.ini'
               - 'requirements.txt'
+              - 'requirements-dev.txt'
               - '.github/workflows/ci.yml'
 
       - name: Set up Python 3.11 (pip cache)
@@ -247,7 +250,7 @@ jobs:
         if: ${{ steps.filter_tests.outputs.changed == 'true' }}
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Run pytest (full suite)
         id: pytest

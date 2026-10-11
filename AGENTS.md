@@ -9,7 +9,7 @@ This file is the single source of instructions for any coding agent working in t
 
 ## Commands
 
-- Setup: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt "ruff==0.5.7"` (ruff is not in `requirements.txt`; CI pins 0.5.7).
+- Setup: `python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt` (runtime requirements plus pinned pytest and ruff).
 - Tests (full suite): `.venv/bin/python -m pytest -o addopts="" -q` (`pytest.ini` sets `addopts = -q`; overriding it shows the pass/fail summary).
 - Lint, check-only: `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`.
 - CI runs the same check-only lint commands (`ruff check` with GitHub annotation output) and never rewrites files, so a local pass means a CI pass.
