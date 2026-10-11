@@ -22,6 +22,7 @@
     "deny": [
       "Read(.env)",
       "Read(.env.*)",
+      "Read(.envrc)",
       "Read(*.pem)",
       "Read(instance/**)"
     ]
