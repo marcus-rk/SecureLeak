@@ -1,20 +1,29 @@
-name: CI - Lint and Security
+name: CI
 
 # Overview
-# This workflow is optimized for fast feedback (~10s on small diffs) while
-# keeping results easy to read. It splits into 3 focused jobs:
-#  - Python • Ruff: format + lint Python
-#  - Templates • djLint: check Jinja templates
+# This workflow is optimized for fast feedback while keeping results easy to
+# read. A small "changes" job decides what is relevant, then up to 3 focused
+# jobs run:
+#  - Python • Ruff: lint + format check Python
 #  - Security • Bandit & pip-audit: basic SAST and dependency CVEs
+#  - Tests • Pytest: full test suite
 #
-# Key speed techniques used here:
-#  - Only run jobs when relevant files change (paths-filter)
+# Key techniques used here:
+#  - Path filtering runs once in the "changes" job; the other jobs use its
+#    outputs in a job-level `if:`, so irrelevant jobs are skipped entirely.
+#    A skipped job still counts as passing for required checks.
+#  - Every filter includes the workflow files, so a CI change runs all jobs.
 #  - Use setup-python's built-in pip cache for tool installs
 #  - Keep steps minimal and pinned for reproducibility and cold-start speed
-#  - Continue steps to always produce a readable summary, then fail at the end
+#  - Check-only: tools never rewrite files, and a failing step fails
+#    natively so it shows red in the UI.
 
+# Push only on main: a PR branch is already covered by pull_request, and
+# without this filter every PR commit would run CI twice (the refs differ,
+# so concurrency does not dedupe them).
 on:
   push:
+    branches: [main]
   pull_request:
 
 # Concurrency ensures only the latest run for a branch/PR is active.
@@ -27,39 +36,64 @@ concurrency:
 permissions:
   contents: read
 
-# Use bash for conditional summaries
+# Use bash for all run steps
 defaults:
   run:
     shell: bash
 
 jobs:
-  python-lint:
-    name: Python • Ruff
+  changes:
+    name: Detect changes
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      security: ${{ steps.filter.outputs.security }}
+      tests: ${{ steps.filter.outputs.tests }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         # Checkout is required so tools can read files. v4 is the current
         # major and is well-cached on GitHub runners.
 
-      # Run only when Python files or Ruff config changed
-      # Paths-filter sets outputs we can branch on. If nothing relevant
-      # changed, we skip the expensive steps and summarize as "Skipped".
-      - name: Filter paths (Python)
-        id: filter_python
+      # One paths-filter run for the whole workflow. Each filter becomes a
+      # job output that the jobs below branch on.
+      - name: Filter paths
+        id: filter
         uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
           filters: |
-            changed:
+            python:
               - '**/*.py'
               - '.ruff.toml'
+              - '.github/workflows/**'
+            security:
+              - 'requirements*.txt'
+              - '**/*.py'
+              - '.github/workflows/**'
+            tests:
+              - '**/*.py'
+              - 'templates/**'
+              - 'static/**'
+              - 'pytest.ini'
+              - 'requirements*.txt'
+              - '.github/workflows/**'
+
+  python-lint:
+    name: Python • Ruff
+    needs: changes
+    # Run only when Python files, Ruff config or the workflow changed
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       # Built-in pip cache for faster installs
       # The cache reuses downloaded wheels between runs to speed up pip installs.
       # Sticking to one Python version maximizes cache hit rate.
       - name: Set up Python 3.11 (pip cache)
-        if: ${{ steps.filter_python.outputs.changed == 'true' }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
@@ -69,123 +103,54 @@ jobs:
       # Tip: update periodically to pick up new rules/perf.
       # Keep this version in sync with ruff in requirements-dev.txt.
       - name: Install Ruff (pinned)
-        if: ${{ steps.filter_python.outputs.changed == 'true' }}
         run: pip install "ruff==0.5.7"
 
-      # Check-only: lint emits GitHub annotations, format fails on drift
-      - name: Ruff (lint and format check)
-        id: ruff
-        continue-on-error: true
-        if: ${{ steps.filter_python.outputs.changed == 'true' }}
-        run: |
-          rc=0
-          ruff check . --output-format=github || rc=1
-          ruff format --check . || rc=1
-          exit "$rc"
-        # Ruff never rewrites files in CI. These are the same check-only
-        # commands listed in AGENTS.md, so a local pass means a CI pass:
-        #  1) ruff check (no --fix) reports lint errors as GitHub annotations.
-        #  2) ruff format --check fails if any file is not formatted.
-        # Both commands always run (rc collects failures), so one push shows
-        # lint errors and formatting drift together.
-        # continue-on-error keeps the job alive so we can write a clean summary
-        # and fail at the end based on the step outcome.
+      # Ruff never rewrites files in CI. These are the same check-only
+      # commands listed in AGENTS.md, so a local pass means a CI pass.
+      - name: Ruff lint
+        id: ruff_lint
+        run: ruff check . --output-format=github
+        # ruff check (no --fix) reports lint errors as GitHub annotations.
+
+      - name: Ruff format check
+        id: ruff_format
+        if: ${{ !cancelled() }}
+        run: ruff format --check .
+        # Fails if any file is not formatted. !cancelled() runs it even when
+        # lint failed, so one push shows lint errors and formatting drift
+        # together.
 
       - name: Summary (Python • Ruff)
+        if: ${{ !cancelled() }}
         run: |
           echo "## Python • Ruff" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.filter_python.outputs.changed }}" != "true" ]; then
-            echo "- Skipped (no Python changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
-          s="${{ steps.ruff.outcome }}"
-          echo "- Ruff: $s" >> "$GITHUB_STEP_SUMMARY"
-          [ "$s" = "failure" ] && exit 1 || exit 0
-        # We intentionally gate the final exit code here instead of failing
-        # earlier. That guarantees a human-friendly section in the job summary
-        # even when lint errors exist.
-
-  # template-lint:
-  #   name: Templates • djLint
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 10
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-  #     # Run only when templates changed
-  #     - name: Filter paths (Templates)
-  #       id: filter
-  #       uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
-  #       with:
-  #         filters: |
-  #           changed:
-  #             - 'templates/**'
-
-  #     - name: Set up Python 3.11 (pip cache)
-  #       if: ${{ steps.filter.outputs.changed == 'true' }}
-  #       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
-  #       with:
-  #         python-version: "3.11"
-  #         cache: "pip"
-
-  #       # djLint supports multiple templating engines. We use the Jinja profile
-  #       # to lint Flask/Jinja templates.
-  #     - name: Install djLint (pinned)
-  #       if: ${{ steps.filter.outputs.changed == 'true' }}
-  #       run: pip install "djlint==1.36.4"
-
-  #     - name: djLint (Jinja profile)
-  #       id: djlint
-  #       continue-on-error: true
-  #       if: ${{ steps.filter.outputs.changed == 'true' }}
-  #       run: djlint templates --check --profile=jinja
-  #       # --check makes it fail on style issues (no auto-fix). We keep
-  #       # continue-on-error to always emit a summary before deciding pass/fail.
-
-  #     - name: Summary (Templates • djLint)
-  #       run: |
-  #         echo "## Templates • djLint" >> "$GITHUB_STEP_SUMMARY"
-  #         if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
-  #           echo "- Skipped (no template changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
-  #         s="${{ steps.djlint.outcome }}"
-  #         echo "- djLint: $s" >> "$GITHUB_STEP_SUMMARY"
-  #         [ "$s" = "failure" ] && exit 1 || exit 0
-  #       # Same summary pattern: write a clear result and fail only here.
+          echo "- Ruff lint: ${{ steps.ruff_lint.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Ruff format: ${{ steps.ruff_format.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+        # Report only: the check steps above already set the job result.
 
   security-audit:
     name: Security • Bandit & pip-audit
+    needs: changes
+    # Run on Python, dependency or workflow changes
+    if: needs.changes.outputs.security == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      # Run on Python or dependency changes
-      - name: Filter paths (Security)
-        id: filter
-        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
-        with:
-          filters: |
-            changed:
-              - 'requirements.txt'
-              - 'requirements-dev.txt'
-              - '**/*.py'
-
       - name: Set up Python 3.11 (pip cache)
-        if: ${{ steps.filter.outputs.changed == 'true' }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
           cache: "pip"
 
       - name: Install security tools (pinned)
-        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: pip install "bandit==1.7.8" "pip-audit==2.7.3"
         # Pin for consistent findings and faster cold starts.
 
       - name: Bandit (SAST)
         id: bandit
-        continue-on-error: true
-        if: ${{ steps.filter.outputs.changed == 'true' }}
         run: |
           bandit -q -r . \
             --severity-level medium \
@@ -198,74 +163,51 @@ jobs:
 
       - name: pip-audit (dependency CVEs)
         id: pip_audit
-        continue-on-error: true
-        if: ${{ steps.filter.outputs.changed == 'true' }}
+        if: ${{ !cancelled() }}
         run: pip-audit -r requirements.txt -r requirements-dev.txt
-        # Checks installed requirement versions against known CVEs.
-        # For lockfiles, use the corresponding flag (e.g., -r, -P, etc.).
+        # Checks requirement versions against known CVEs.
+        # !cancelled() runs it even when Bandit failed, so both results show.
 
       - name: Summary (Security)
+        if: ${{ !cancelled() }}
         run: |
           echo "## Security • Bandit & pip-audit" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.filter.outputs.changed }}" != "true" ]; then
-            echo "- Skipped (no security-relevant changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
-          sb="${{ steps.bandit.outcome }}"; sa="${{ steps.pip_audit.outcome }}"
-          echo "- Bandit: $sb" >> "$GITHUB_STEP_SUMMARY"
-          echo "- pip-audit: $sa" >> "$GITHUB_STEP_SUMMARY"
-          [ "$sb" = "failure" ] || [ "$sa" = "failure" ] && exit 1 || exit 0
-        # We fail the job if either Bandit or pip-audit found issues serious
-        # enough to set a failure. The summary always shows both results.
+          echo "- Bandit: ${{ steps.bandit.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- pip-audit: ${{ steps.pip_audit.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+        # Report only: the job fails if Bandit or pip-audit failed.
 
   tests:
     name: Tests • Pytest
+    needs: changes
+    # Run only when code, templates, static files, test config or the
+    # workflow changed
+    if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      # Run only when code, templates, static files or test config changed
-      - name: Filter paths (Tests)
-        id: filter_tests
-        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
-        with:
-          filters: |
-            changed:
-              - '**/*.py'
-              - 'templates/**'
-              - 'static/**'
-              - 'pytest.ini'
-              - 'requirements.txt'
-              - 'requirements-dev.txt'
-              - '.github/workflows/ci.yml'
-
       - name: Set up Python 3.11 (pip cache)
-        if: ${{ steps.filter_tests.outputs.changed == 'true' }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
           cache: "pip"
 
       - name: Install dependencies
-        if: ${{ steps.filter_tests.outputs.changed == 'true' }}
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
       - name: Run pytest (full suite)
         id: pytest
-        continue-on-error: true
-        if: ${{ steps.filter_tests.outputs.changed == 'true' }}
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest
 
       - name: Summary (Tests • Pytest)
+        if: ${{ !cancelled() }}
         run: |
           echo "## Tests • Pytest" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.filter_tests.outputs.changed }}" != "true" ]; then
-            echo "- Skipped (no test-relevant changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
-          s="${{ steps.pytest.outcome }}"
-          echo "- pytest: $s" >> "$GITHUB_STEP_SUMMARY"
-          [ "$s" = "failure" ] && exit 1 || exit 0
+          echo "- pytest: ${{ steps.pytest.outcome }}" >> "$GITHUB_STEP_SUMMARY"
