@@ -179,7 +179,7 @@ The project was built in phases to ensure security was integrated at every step,
    cd SecureLeak
    python3 -m venv venv
    source venv/bin/activate  
-   pip install -r requirements.txt
+   pip install -r requirements-dev.txt  # runtime + pytest and ruff; requirements.txt alone is runtime-only
    pip install --upgrade pip
    ```
 
