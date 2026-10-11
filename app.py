@@ -1,12 +1,12 @@
-from datetime import timedelta
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, render_template
 from flask_talisman import Talisman
 from flask_wtf import CSRFProtect
-from flask_wtf.csrf import generate_csrf, CSRFError
+from flask_wtf.csrf import CSRFError, generate_csrf
 
 from database.connection import close_db
 from security.limiter import limiter
@@ -25,7 +25,7 @@ def create_app() -> Flask:
     # 3. SESSION_COOKIE_SAMESITE: 'Lax' restricts cookies on cross-site requests (CSRF protection).
     # 4. SESSION_COOKIE_SECURE: Sends cookies only over HTTPS (active when debug=False).
     # 5. MAX_CONTENT_LENGTH: Limits request body to 3MB to prevent DoS attacks.
-    
+
     app.config.from_mapping(
         SECRET_KEY=os.environ.get("SECRET_KEY", "dev-insecure-key"),
         DATABASE=os.environ.get("DATABASE", str(Path(app.instance_path) / "secureleak.sqlite")),
@@ -43,6 +43,7 @@ def create_app() -> Flask:
     db_file = Path(app.config["DATABASE"])
     if not db_file.exists():
         from database.initialize import apply as init_db_from_sql
+
         with app.app_context():
             init_db_from_sql()
             app.logger.info(f"Initialized new database at {db_file}")
@@ -56,22 +57,22 @@ def create_app() -> Flask:
     limiter.init_app(app)
     Talisman(
         app,
-        content_security_policy={ 
-            "default-src": "'self'", 
-            "script-src": "'self'", 
-            "style-src": "'self'", 
-            "object-src": "'none'", 
+        content_security_policy={
+            "default-src": "'self'",
+            "script-src": "'self'",
+            "style-src": "'self'",
+            "object-src": "'none'",
             "frame-ancestors": "'none'",
             "form-action": "'self'",
-            "base-uri": "'self'"
+            "base-uri": "'self'",
         },
         force_https=not app.debug,
-        strict_transport_security=True
+        strict_transport_security=True,
     )
 
+    from routes.admin import admin_bp
     from routes.auth import auth_bp
     from routes.reports import reports_bp
-    from routes.admin import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(reports_bp)

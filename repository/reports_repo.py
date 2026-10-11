@@ -14,29 +14,37 @@ def create_report(owner_id: int, title: str, description: str, severity: str, st
 
 
 def get_report_by_id(report_id: int) -> Optional[Dict[str, Any]]:
-    row = get_db().execute(
-        """
+    row = (
+        get_db()
+        .execute(
+            """
         SELECT r.*, u.username AS owner_username
         FROM reports AS r
         LEFT JOIN users AS u ON u.id = r.owner_id
         WHERE r.id = ?
         """,
-        (report_id,),
-    ).fetchone()
+            (report_id,),
+        )
+        .fetchone()
+    )
     return dict(row) if row else None
 
 
 def list_public_and_own(user_id: int, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
-    rows = get_db().execute(
-        """
+    rows = (
+        get_db()
+        .execute(
+            """
         SELECT *
         FROM reports
         WHERE status = 'public' OR owner_id = ?
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
         """,
-        (user_id, limit, offset),
-    ).fetchall()
+            (user_id, limit, offset),
+        )
+        .fetchall()
+    )
     return [dict(r) for r in rows]
 
 
@@ -84,12 +92,16 @@ def list_all(limit: int = 200, offset: int = 0) -> List[Dict[str, Any]]:
     """List all reports for admin dashboard, newest first.
     Includes owner username for context.
     """
-    rows = get_db().execute(
-        (
-            "SELECT r.*, u.username AS owner_username "
-            "FROM reports r LEFT JOIN users u ON u.id = r.owner_id "
-            "ORDER BY r.created_at DESC LIMIT ? OFFSET ?"
-        ),
-        (limit, offset),
-    ).fetchall()
+    rows = (
+        get_db()
+        .execute(
+            (
+                "SELECT r.*, u.username AS owner_username "
+                "FROM reports r LEFT JOIN users u ON u.id = r.owner_id "
+                "ORDER BY r.created_at DESC LIMIT ? OFFSET ?"
+            ),
+            (limit, offset),
+        )
+        .fetchall()
+    )
     return [dict(r) for r in rows]

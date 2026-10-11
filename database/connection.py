@@ -6,7 +6,7 @@ from flask import current_app, g
 
 
 def get_db() -> sqlite3.Connection:
-    """Return a SQLite connection stored on Flask's `g` context. 
+    """Return a SQLite connection stored on Flask's `g` context.
     (g context = Flask's application context global storage)
 
     Ensures the database file and parent directory exist and configures rows

@@ -10,7 +10,7 @@ def is_report_viewable(report: dict, user_id: Optional[int], role: Optional[str]
     """
     if not report:
         return False
-    
+
     # Admin override (can see everything)
     if role == "admin":
         return True

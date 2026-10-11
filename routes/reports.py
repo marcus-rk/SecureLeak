@@ -1,6 +1,4 @@
 import os
-from pathlib import Path
-from typing import Optional
 
 from flask import (
     Blueprint,
@@ -14,12 +12,12 @@ from flask import (
     url_for,
 )
 from flask.typing import ResponseReturnValue
-from repository import reports_repo
-from repository import comments_repo
+
+from repository import comments_repo, reports_repo
+from security.audit import log_security_event
 from security.decorators import login_required
 from security.limiter import limiter
 from security.reports_access import is_report_viewable
-from security.audit import log_security_event
 from security.uploads import (
     get_ext,
     is_allowed_ext,
@@ -109,6 +107,7 @@ def view_report(report_id: int) -> ResponseReturnValue:
     comments = comments_repo.list_comments_for_report(report_id)
     return render_template("report_detail.html", report=report, comments=comments), 200
 
+
 @reports_bp.route("/<int:report_id>/comment", methods=["POST"])
 @login_required
 @limiter.limit("20 per hour")
@@ -134,7 +133,7 @@ def add_comment(report_id: int) -> ResponseReturnValue:
 
 
 @reports_bp.route("/<int:report_id>/image/<path:name>", methods=["GET"])  # New, clearer path
-@reports_bp.route("/file/<int:report_id>/<path:name>", methods=["GET"])   # Back-compat alias
+@reports_bp.route("/file/<int:report_id>/<path:name>", methods=["GET"])  # Back-compat alias
 @login_required
 def report_file(report_id: int, name: str) -> ResponseReturnValue:
     report = reports_repo.get_report_by_id(report_id)
@@ -155,6 +154,7 @@ def report_file(report_id: int, name: str) -> ResponseReturnValue:
 
 
 # --- helpers ---
+
 
 def _report_bad_request(msg: str) -> ResponseReturnValue:
     flash(msg, "error")
