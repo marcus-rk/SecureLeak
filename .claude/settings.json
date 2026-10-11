@@ -24,6 +24,7 @@
       "Read(.env.*)",
       "Read(.envrc)",
       "Read(*.pem)",
+      "Read(*.key)",
       "Read(instance/**)"
     ]
   }
