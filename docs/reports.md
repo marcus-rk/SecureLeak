@@ -47,7 +47,6 @@ We implement a strict "Defense-in-Depth" strategy for file uploads to prevent ma
 We don't just check the extension; we re-process the image.
 
 ```python
-```python
 # security/uploads.py
 def store_report_image(file: FileStorage, report_id: int, base_dir: Optional[str] = None) -> str:
     # ...
@@ -59,6 +58,10 @@ def store_report_image(file: FileStorage, report_id: int, base_dir: Optional[str
     
     # Sanitize image: Open with Pillow, strip metadata, and save fresh
     with Image.open(file) as img:
+        # Check dimensions to prevent extremely large images
+        if img.width > MAX_IMAGE_DIMENSION or img.height > MAX_IMAGE_DIMENSION:
+            raise ValueError(f"Image dimensions too large. Max {MAX_IMAGE_DIMENSION}x{MAX_IMAGE_DIMENSION} pixels.")
+
         # Convert to RGB to handle PNGs with transparency if saving as JPEG,
         # but here we keep original format. Pillow saves without metadata by default.
         # We create a new image to ensure no hidden data is copied over.
@@ -85,7 +88,8 @@ def store_report_image(file: FileStorage, report_id: int, base_dir: Optional[str
 |:---|:---|:---|:---|
 | `GET` | `/reports` | List reports | Shows public + own private reports. |
 | `POST` | `/reports/new` | Create report | CSRF check, Input Validation, Rate Limit. |
-| `GET` | `/reports/<id>` | View report | Checks `is_report_viewable(user, report, role)`. |
+| `GET` | `/reports/<id>` | View report | Checks `is_report_viewable(report, user_id, role)`. |
+| `POST` | `/reports/<id>/comment` | Add comment | CSRF check, Rate Limit (20 per hour). |
 | `GET` | `/reports/<id>/image/<name>` | Serve image | Checks ownership/visibility before serving. |
 
 ---

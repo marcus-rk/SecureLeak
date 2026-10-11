@@ -2,7 +2,7 @@
 
 > *A minimal, educational bug tracker built to study and prevent web vulnerabilities.*
 
-![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.0.3-black?logo=flask)
 ![SQLite](https://img.shields.io/badge/SQLite-3-07405E?logo=sqlite&logoColor=white)
 ![Argon2](https://img.shields.io/badge/Argon2_cffi-23.1.0-7952B3)
@@ -17,7 +17,7 @@
 
 **SecureLeak** is a simplified bug tracker where developers (users) can submit **vulnerability reports** to admins. 
  
-Admins review, comment on, close, or delete reports (e.g., spam).  
+Admins review, comment on, and close reports.  
 Reports can be **public** (for learning) or **private** (internal).  
 Optional **file uploads** allow screenshots or proof-of-concepts.  
 
@@ -65,8 +65,7 @@ It’s intentionally **meta** — a secure app *about* vulnerabilities, protecte
 | View **public** reports | ✅ | ✅ |
 | View **private** reports | ⚠️ (only their own) | ✅ |
 | Comment on reports | ⚠️ (own/public) | ✅ |
-| Change report status (Public / Private / Closed) | ⚠️ (only their own) | ✅ |
-| Delete report | ⚠️ (only their own) | ✅ |
+| Change report status (Public / Private / Closed) | ❌ | ✅ |
 
 ---
 
@@ -128,7 +127,9 @@ SecureLeak/
 ├─ tests/                  # Pytest test-suite
 │  ├─ conftest.py          # App fixture (temp DB per run)
 │  ├─ auth/                # Auth tests
-│  ├─ security/            # Security tests (Headers, CSP)
+│  ├─ helpers/             # Shared test helpers
+│  ├─ reports/             # Report upload tests
+│  ├─ security/            # Security tests (Headers; CSP test module is skipped)
 │  └─ repository/          # Repository CRUD tests
 │
 ├─ uploads/                # Uploaded files (kept outside /static)
@@ -141,7 +142,7 @@ SecureLeak/
 - `app.py` creates the Flask app, enables CSRF and security headers, registers blueprints, and auto-initializes the SQLite DB on first run.  
 - `database/` holds the SQLite connection helpers and the migration SQL.  
 - `repository/` contains small CRUD helpers that use `database.connection.get_db()`.  
-- `routes/` defines the URL endpoints per feature (auth, reports).  
+- `routes/` defines the URL endpoints per feature (auth, reports, admin).  
 - `templates/` contains the rendered HTML pages, and `static/` serves CSS/JS/icons.  
 - `instance/` holds the SQLite database and other writable runtime files.  
 - `uploads/` stores user-uploaded files outside the static path for safety.
@@ -167,7 +168,7 @@ The project was built in phases to ensure security was integrated at every step,
 ## How to Run
 
 ### Prerequisites
-- Python 3.12+
+- Python 3.11+
 - pip
 
 ### Installation
@@ -225,10 +226,10 @@ pytest tests/auth/
 ```
 
 **Test Coverage:**
-- **Auth**: Login, Register, Logout, Session management.
-- **Security**: CSP headers, HSTS, Rate Limiting, Password hashing.
-- **Repository**: Database CRUD operations.
-- **Uploads**: File type validation, sanitization.
+- **Auth**: Login (CSRF handling, redirect after login).
+- **Security**: Restrictive CSP header on the login page (`test_csp_headers.py` is skipped).
+- **Repository**: Database CRUD operations (users, reports, comments).
+- **Uploads**: Public/private upload access, disallowed extension rejected.
 
 ---
 

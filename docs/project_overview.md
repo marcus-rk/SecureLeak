@@ -1,6 +1,6 @@
 # Project Overview
 
-**SecureLeak** is a secure whistleblowing platform designed to demonstrate **Defense-in-Depth** and **Secure-by-Design** principles. It is built as a layered Flask application, prioritizing clarity and explicit security controls over framework magic.
+**SecureLeak** is a simplified bug tracker for vulnerability reports, designed to demonstrate **Defense-in-Depth** and **Secure-by-Design** principles. It is built as a layered Flask application, prioritizing clarity and explicit security controls over framework magic.
 
 ---
 
@@ -18,7 +18,7 @@ graph LR
 ```
 
 1.  **Routes (`routes/`)**: Minimal HTTP handlers. They validate input format and delegate logic.
-2.  **Security Layer (`security/`)**: Centralized controls for Authentication, Authorization (RBAC), Input Sanitization, and Audit Logging.
+2.  **Security Layer (`security/`)**: Centralized controls for Authentication, Authorization (RBAC), upload/image sanitization, and Audit Logging.
 3.  **Repository (`repository/`)**: The *only* place where SQL is executed. Uses parameterized queries to prevent SQL Injection.
 4.  **Database (`database/`)**: SQLite with strict schema enforcement.
 
@@ -61,7 +61,7 @@ Talisman(
 
 ### 1. Defense-in-Depth
 We don't rely on a single control. For example, to prevent XSS, we use:
-*   **Input Validation**: Rejecting bad characters.
+*   **Input Validation**: Allowlists (e.g. severity values, image extensions) and length checks (e.g. comment length).
 *   **Context-Aware Escaping**: Jinja2 auto-escaping.
 *   **Content Security Policy (CSP)**: Browser-level blocking of unauthorized scripts.
 

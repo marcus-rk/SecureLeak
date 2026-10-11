@@ -24,10 +24,10 @@ sequenceDiagram
 ```
 
 ### Why Session-Based Auth? (Exam Note)
-We chose **stateful session cookies** over JWTs (JSON Web Tokens) because:
+We chose **session cookies** over JWTs (JSON Web Tokens) because:
 1.  **Simplicity**: No need to manage token storage or expiration manually on the client.
 2.  **Security**: Cookies can be made `HttpOnly` (XSS-proof), whereas JWTs in `localStorage` are vulnerable to XSS.
-3.  **Revocation**: Server-side sessions can be invalidated instantly (e.g., on logout or password change), which is harder with stateless JWTs.
+3.  **Expiry**: Sessions are Flask client-side signed cookies with a 30 minute lifetime (`PERMANENT_SESSION_LIFETIME` in `app.py`). Logout clears the session in the browser, but there is no server-side revocation list, so a copied cookie stays valid until it expires.
 
 ### Password Hashing (Argon2id)
 
@@ -57,10 +57,10 @@ We use Flask's secure cookie sessions with the following attributes enforced in 
 
 *   **`HttpOnly`**: `True`. Prevents JavaScript (XSS) from reading the session cookie.
 *   **`SameSite`**: `"Lax"`. Prevents the browser from sending the cookie on cross-site POST requests (CSRF mitigation).
-*   **`Secure`**: `True` (in production). Ensures the cookie is only sent over HTTPS.
+*   **`Secure`**: `not app.debug`, evaluated once when the app is configured in `app.py`. Ensures the cookie is only sent over HTTPS when debug is off.
 
 **Session Fixation Protection**:
-We explicitly call `session.clear()` before setting the user identity upon successful login.
+We explicitly call `session.clear()` (in `_establish_session`) before setting the user identity upon successful login, so no data from a pre-login session carries over. Flask cookie sessions have no server-side session ID to regenerate; the session lives in the signed cookie itself.
 
 ```python
 # routes/auth.py

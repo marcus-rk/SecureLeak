@@ -15,7 +15,7 @@ Every piece of data coming from the client (forms, headers, cookies, files) is t
 Before processing data, we validate that it meets expected formats.
 
 - **Type Enforcement**: We cast inputs to their expected types immediately (e.g., `int(report_id)`).
-- **Length Limits**: Inputs are checked for length to prevent database truncation issues or Denial of Service (DoS).
+- **Length Limits**: Only the comment body is length-checked (1 to 2000 characters, in `routes/reports.py`). Title, description, username and email have no length limit in the code.
 - **Allowlisting**: For critical fields like `severity` or `status`, we only accept values from a predefined set.
 
 ```python
@@ -89,6 +89,8 @@ Configured in `app.py` via `Flask-Talisman`:
 
 ```python
 content_security_policy={
+    # Fallback for any fetch directive not listed below
+    "default-src": "'self'",
     # Only allow scripts from our own domain
     "script-src": "'self'",
     # Block all inline scripts (<script>...</script>) and event handlers (onclick=...)
@@ -96,6 +98,8 @@ content_security_policy={
     "style-src": "'self'",
     # Block <object>, <embed>, <applet>
     "object-src": "'none'",
+    # Block embedding this site in frames (clickjacking)
+    "frame-ancestors": "'none'",
     # Prevent forms from submitting to external sites
     "form-action": "'self'",
     # Prevent <base> tag hijacking
@@ -113,7 +117,7 @@ content_security_policy={
 1.  **Extension Allowlist**: Only `.png`, `.jpg`, `.jpeg`, `.gif`.
 2.  **MIME Type Check**: Must start with `image/`.
 3.  **Content Sanitization**: We use **Pillow** to re-encode images. This strips malicious metadata (EXIF) and ensures the file is truly an image.
-4.  **Filename Sanitization**: Original filenames are discarded. We generate a random secure hash for storage.
+4.  **Filename Sanitization**: Original filenames are discarded. We generate a random token (`secrets.token_hex(16)`) for storage.
 5.  **Storage Location**: Uploads are stored outside the `static/` folder and served via a controlled route, preventing direct execution.
 
 ---

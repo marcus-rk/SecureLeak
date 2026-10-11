@@ -30,6 +30,7 @@ These apply to all endpoints unless a specific override is defined.
 | **Login** | `POST /auth/login` | **5 per minute** | Prevents brute-force password guessing attacks. |
 | **Register** | `POST /auth/register` | **3 per hour** | Mitigates automated account creation (spam bots). |
 | **Create Report** | `POST /reports/new` | **10 per hour** | Prevents content flooding and database bloat. |
+| **Add Comment** | `POST /reports/<id>/comment` | **20 per hour** | Prevents comment spam. |
 
 ### Implementation
 
@@ -59,7 +60,8 @@ To prevent "Resource Exhaustion" attacks where an attacker sends massive payload
 
 *   **Max Request Body Size**: `MAX_CONTENT_LENGTH` is set to **3 MB**.
     *   This covers the file upload limit (2 MB) plus overhead for form fields and headers.
-    *   Requests larger than this are rejected immediately by Flask with a 413 error.
+    *   Requests larger than this are rejected by Flask before the route runs, with Flask's default `413 Request Entity Too Large` response (there is no custom 413 handler).
+    *   The 2 MB upload limit is checked in `routes/reports.py` against `request.content_length`, which is the size of the whole request body (file plus form fields), and only when a file is attached.
 
 ```python
 # app.py
@@ -70,7 +72,7 @@ app.config.from_mapping(
 ```
 
 *   **File Uploads**:
-    *   Strictly validated for file type (PNG, JPG, GIF) and MIME type.
+    *   Validated against an extension allowlist (`.png`, `.jpg`, `.jpeg`, `.gif`) and a MIME type check (the declared type must start with `image/`). The file must also decode as an image in Pillow.
     *   **Pixel Dimensions**: Images are limited to **2048x2048 pixels** to prevent "Decompression Bomb" attacks that exhaust server RAM.
     *   Files are renamed upon storage to prevent directory traversal or overwriting critical files.
 

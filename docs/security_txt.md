@@ -12,10 +12,10 @@ We serve this file at the standard location: `/.well-known/security.txt`.
 
 ### Content
 The file (`security/security.txt`) contains:
-*   **Contact**: The email address for reporting bugs (`security@secureleak.example.com`).
+*   **Contact**: The contact for reporting bugs (see the `Contact` field in `security/security.txt`).
 *   **Expires**: A date after which the information is considered stale (forcing regular review).
 *   **Preferred-Languages**: Helping researchers know which language to write in.
-*   **Encryption**: A link to our PGP key for encrypting sensitive reports.
+*   **Policy**: A link to the project's vulnerability reporting policy.
 
 ### Technical Setup
 A dedicated route in `app.py` reads the static file and serves it with the correct `Content-Type: text/plain` header.

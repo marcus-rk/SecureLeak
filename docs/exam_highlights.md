@@ -40,21 +40,24 @@ Talisman(
     force_https=not app.debug,
     strict_transport_security=True
 )
+```
+
+---
+
+## 2. Input Validation & Broken Access Control
+
+### 🛡️ Input Validation (Allowlisting)
+**Concept**: Only accepting known-good input.
+**Implementation**: `routes/reports.py`
+**Key Snippet**:
 ```python
 # routes/reports.py
+# Allowlisting valid values
 if severity not in {"low", "medium", "high"}:
     return _report_bad_request("Invalid severity.")
 
 # Type enforcement is handled by Flask routing:
 # @reports_bp.route("/<int:report_id>", methods=["GET"])
-```ey Snippet**:
-```python
-# Allowlisting valid values
-if severity not in {"low", "medium", "high"}:
-    return _report_bad_request("Invalid severity.")
-
-# Type enforcement
-report_id = int(request.view_args['report_id'])
 ```
 **Reflection for Report**:
 > "Input validation is the first line of defense. By using **Allowlisting** (only accepting known good values) rather than Blocklisting (trying to guess bad values), we significantly reduce the attack surface. If the data isn't 'low', 'medium', or 'high', it is rejected immediately."
@@ -86,21 +89,22 @@ def is_report_viewable(report: dict, user_id: Optional[int], role: Optional[str]
 
 ---
 
+## 3. Cryptographic Failures
+
+### 🛡️ Password Hashing (Argon2id)
+**Concept**: Storing passwords so that a database leak does not reveal them.
+**Implementation**: `security/auth_utils.py`
+**Key Snippet**:
 ```python
 # security/auth_utils.py
-PasswordHasher(
-    time_cost=3,
-    memory_cost=65536,  # 64 MiB
-    parallelism=2,
-    hash_len=32,
-    salt_len=16,
-)
-``` time_cost=3,        # Iterations
-    memory_cost=65536,  # 64 MiB RAM usage
-    parallelism=2,      # Threads
-    hash_len=32,
-    salt_len=16
-)
+def build_hasher() -> PasswordHasher:
+    return PasswordHasher(
+        time_cost=3,
+        memory_cost=65536,  # 64 MiB
+        parallelism=2,
+        hash_len=32,
+        salt_len=16,
+    )
 ```
 **Reflection for Report**:
 > "We chose **Argon2id** (the OWASP recommended algorithm) over bcrypt or PBKDF2. Argon2id is memory-hard, making it significantly more resistant to GPU/ASIC brute-force attacks. We explicitly configured parameters (64MB RAM cost) to balance security with server performance."
@@ -146,7 +150,7 @@ with Image.open(file) as img:
 # Session fixation defense and identity establishment
 _establish_session(user)
 
-# security/auth_utils.py
+# routes/auth.py
 def _establish_session(user: dict) -> None:
     session.clear()
     session["user_id"] = user["id"]
@@ -189,7 +193,7 @@ def is_common_password(password: str) -> bool:
 **Concept**: Ensuring third-party libraries are known and secure.
 **Implementation**: `requirements.txt`
 **Reflection for Report**:
-> "We pin all dependencies to specific versions in `requirements.txt`. This prevents 'supply chain attacks' where a future update might introduce a vulnerability. We can audit these specific versions against CVE databases."
+> "We pin dependencies to specific versions in `requirements.txt` (all except `cryptography`, which uses a `>=41` lower bound). Pinning prevents 'supply chain attacks' where a future update might introduce a vulnerability. We can audit these specific versions against CVE databases."
 
 ---
 
@@ -205,7 +209,7 @@ formatter = logging.Formatter(
 )
 ```
 **Reflection for Report**:
-> "We implemented a dedicated audit log separate from standard debug logs. It records WHO (User ID), DID WHAT (Action), TO WHAT (Target ID), and FROM WHERE (IP). This is crucial for forensics. If a malicious admin deletes a report, we have an immutable record of that action."
+> "We implemented a dedicated audit log separate from standard debug logs. It records WHO (User ID), DID WHAT (Action), TO WHAT (Target ID), and FROM WHERE (IP). This is crucial for forensics. Events such as logins, registrations and report creation are traceable to a user and IP. The log is a plain file (`instance/audit.log`), so it is append-only by convention, not tamper-proof, and admin status changes are not logged yet."
 
 ---
 
@@ -224,7 +228,7 @@ def login_post(): ...
 
 ---
 
-## 10. Automated Security Testing (DevSecOps)
+## 9. Automated Security Testing (DevSecOps)
 
 ### 🛡️ CI/CD Pipeline (`.github/workflows/ci.yml`)
 **Concept**: Shifting security left by automating checks on every commit.
@@ -234,7 +238,7 @@ def login_post(): ...
 *   **pip-audit**: Checks installed dependencies against known CVE databases.
 *   **Ruff**: Enforces code quality and linting standards.
 **Reflection for Report**:
-> "Security isn't a one-time check. We implemented a **DevSecOps** pipeline that runs **Bandit** (SAST) and **pip-audit** (SCA) on every pull request. This ensures that no known vulnerabilities or insecure coding patterns (like `eval()`) are merged into the main branch."
+> "Security isn't a one-time check. We implemented a **DevSecOps** pipeline that runs **Bandit** (SAST) and **pip-audit** (SCA) on every push and pull request that changes Python files or `requirements.txt`. This helps ensure that no known vulnerabilities or insecure coding patterns (like `eval()`) are merged into the main branch. The pytest job in CI currently runs only `tests/repository`."
 
 ### 🛡️ Security Unit Tests (`tests/security/`)
 **Concept**: Verifying that security controls actually work.
@@ -251,7 +255,7 @@ def test_csp_header_is_restrictive_on_login(client):
 
 ---
 
-## 11. Advanced Access Control Patterns
+## 10. Advanced Access Control Patterns
 
 ### 🛡️ Custom Role Decorators (Defense-in-Depth)
 **Concept**: Ensuring high-privilege actions are doubly verified.
@@ -269,7 +273,7 @@ if required == "admin":
 
 ---
 
-## 12. CSRF Protection Details
+## 11. CSRF Protection Details
 
 ### 🛡️ Synchronizer Token Pattern
 **Concept**: Preventing attackers from forcing users to submit unwanted forms.
@@ -277,7 +281,8 @@ if required == "admin":
 **Key Snippet**:
 ```python
 # app.py
-csrf = CSRFProtect(app)
+csrf = CSRFProtect()
+csrf.init_app(app)
 
 # templates/login.html
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -287,7 +292,7 @@ csrf = CSRFProtect(app)
 
 ---
 
-## 13. Error Handling & Information Leakage
+## 12. Error Handling & Information Leakage
 
 ### 🛡️ Generic Error Pages
 **Concept**: Preventing stack traces from revealing internal logic.
@@ -303,7 +308,7 @@ def internal_error(_e):
 
 ---
 
-## 14. Case Study: Defense-in-Depth (The "Swiss Cheese" Model)
+## 13. Case Study: Defense-in-Depth (The "Swiss Cheese" Model)
 
 **Scenario**: A user uploads a screenshot of a vulnerability.
 **Why this matters**: File uploads are a high-risk feature (RCE, XSS, DoS).
@@ -325,7 +330,7 @@ def internal_error(_e):
 
 ---
 
-## 15. Critical Reflection: Future Improvements
+## 14. Critical Reflection: Future Improvements
 
 **Concept**: Acknowledging limitations is a sign of maturity.
 **What is missing?**:
@@ -335,13 +340,13 @@ def internal_error(_e):
 
 ---
 
-## 16. Architectural Reflections (The "Why")
+## 15. Architectural Reflections (The "Why")
 
 ### 💡 KISS Principle (Keep It Simple, Stupid)
 > "Complexity is the worst enemy of security. By using **SQLite** and standard **Flask** patterns, we reduced the attack surface. A complex microservices architecture might have introduced more vulnerabilities (e.g., insecure inter-service communication) than it solved for this scale."
 
 ### 💡 Why Flask?
-> "We chose Flask over Django for this educational project because Flask is 'explicit'. In Django, much of the security (CSRF, Auth) happens 'magically' in the background. In Flask, we had to manually configure `Talisman`, `CSRFProtect`, and `LoginManager`, which demonstrates a deeper understanding of *how* these mechanisms actually work."
+> "We chose Flask over Django for this educational project because Flask is 'explicit'. In Django, much of the security (CSRF, Auth) happens 'magically' in the background. In Flask, we had to manually configure `Talisman`, `CSRFProtect`, and a custom session-based `@login_required` decorator, which demonstrates a deeper understanding of *how* these mechanisms actually work."
 
 ### 💡 SSR (Server-Side Rendering) vs. CSR (Client-Side Rendering)
 > "We deliberately chose **SSR** (Flask/Jinja2) over a CSR framework (React/Vue) for security reasons:
@@ -353,4 +358,4 @@ def internal_error(_e):
 > "We never rely on a single control. For example, XSS is blocked by **Auto-escaping** AND **CSP**. CSRF is blocked by **SameSite cookies** AND **CSRF Tokens**. Admin access is checked in the **Session** AND verified against the **Database** on every request. If one layer fails, the next catches the attack."
 
 ### 💡 Audit Logging
-> "Security is not just prevention, but detection. We implemented `security/audit.py` to log critical events (Login, Register, Report Access). This ensures **Non-repudiation**—users cannot deny actions they performed, and admins can investigate incidents."
+> "Security is not just prevention, but detection. We implemented `security/audit.py` to log critical events (`LOGIN_SUCCESS`, `LOGIN_FAILED`, `LOGOUT`, `REGISTER_USER`, `CREATE_REPORT`). This ensures **Non-repudiation**: users cannot deny actions they performed, and admins can investigate incidents."
