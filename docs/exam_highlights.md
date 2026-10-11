@@ -238,7 +238,7 @@ def login_post(): ...
 *   **pip-audit**: Checks installed dependencies against known CVE databases.
 *   **Ruff**: Enforces code quality and linting standards.
 **Reflection for Report**:
-> "Security isn't a one-time check. We implemented a **DevSecOps** pipeline that runs **Bandit** (SAST) and **pip-audit** (SCA) on every push and pull request that changes Python files or `requirements.txt`. This helps ensure that no known vulnerabilities or insecure coding patterns (like `eval()`) are merged into the main branch. The pytest job in CI currently runs only `tests/repository`."
+> "Security isn't a one-time check. We implemented a **DevSecOps** pipeline that runs **Bandit** (SAST) and **pip-audit** (SCA) on every push and pull request that changes Python files or `requirements.txt`. This helps ensure that no known vulnerabilities or insecure coding patterns (like `eval()`) are merged into the main branch. The pytest job in CI runs the full test suite."
 
 ### 🛡️ Security Unit Tests (`tests/security/`)
 **Concept**: Verifying that security controls actually work.

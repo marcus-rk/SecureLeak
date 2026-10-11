@@ -211,26 +211,25 @@ jobs:
         # enough to set a failure. The summary always shows both results.
 
   tests-repository:
-    name: Tests • Pytest (repository only)
+    name: Tests • Pytest
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Run only when repository-related files changed
+      # Run only when code, templates or test config changed
       - name: Filter paths (Repo tests)
         id: filter_repo
         uses: dorny/paths-filter@v3
         with:
           filters: |
             changed:
-              - 'repository/**'
-              - 'database/**'
-              - 'app.py'
-              - 'tests/repository/**'
+              - '**/*.py'
+              - 'templates/**'
               - 'pytest.ini'
               - 'requirements.txt'
+              - '.github/workflows/ci.yml'
 
       - name: Set up Python 3.11 (pip cache)
         if: ${{ steps.filter_repo.outputs.changed == 'true' }}
@@ -245,20 +244,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run pytest (tests/repository only)
+      - name: Run pytest (full suite)
         id: pytest
         continue-on-error: true
         if: ${{ steps.filter_repo.outputs.changed == 'true' }}
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest -q tests/repository
+          pytest
 
-      - name: Summary (Tests • Pytest repository)
+      - name: Summary (Tests • Pytest)
         run: |
-          echo "## Tests • Pytest (repository only)" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Tests • Pytest" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ steps.filter_repo.outputs.changed }}" != "true" ]; then
-            echo "- Skipped (no repo-related changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+            echo "- Skipped (no test-relevant changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           s="${{ steps.pytest.outcome }}"
           echo "- pytest: $s" >> "$GITHUB_STEP_SUMMARY"
           [ "$s" = "failure" ] && exit 1 || exit 0
