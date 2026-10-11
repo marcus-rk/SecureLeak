@@ -14,17 +14,21 @@ def create_comment(report_id: int, user_id: int, content: str) -> int:
 
 
 def list_comments_for_report(report_id: int) -> List[Dict[str, Any]]:
-    rows = get_db().execute(
-        (
-            "SELECT c.id, c.report_id, c.user_id, c.content, c.created_at, "
-            "u.username AS author_username "
-            "FROM comments c "
-            "LEFT JOIN users u ON u.id = c.user_id "
-            "WHERE c.report_id = ? "
-            "ORDER BY c.created_at ASC, c.id ASC"
-        ),
-        (report_id,),
-    ).fetchall()
+    rows = (
+        get_db()
+        .execute(
+            (
+                "SELECT c.id, c.report_id, c.user_id, c.content, c.created_at, "
+                "u.username AS author_username "
+                "FROM comments c "
+                "LEFT JOIN users u ON u.id = c.user_id "
+                "WHERE c.report_id = ? "
+                "ORDER BY c.created_at ASC, c.id ASC"
+            ),
+            (report_id,),
+        )
+        .fetchall()
+    )
     return [dict(r) for r in rows]
 
 

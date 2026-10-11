@@ -1,12 +1,11 @@
 import csv
 import os
 import random
-from datetime import datetime
+import sys
+from io import BytesIO
 from pathlib import Path
 from typing import List
-import sys
 
-from io import BytesIO
 from dotenv import load_dotenv
 from werkzeug.datastructures import FileStorage
 
@@ -19,10 +18,9 @@ if str(ROOT_DIR) not in sys.path:
 from app import create_app  # noqa: E402
 from database.connection import close_db  # noqa: E402
 from database.initialize import apply as init_db  # noqa: E402
-from repository import users_repo, reports_repo, comments_repo  # noqa: E402
+from repository import comments_repo, reports_repo, users_repo  # noqa: E402
 from security.auth_utils import build_hasher, is_common_password, validate_password  # noqa: E402
 from security.uploads import store_report_image, uploads_base_dir  # noqa: E402
-
 
 # Deterministic RNG
 RNG_SEED = 42
@@ -106,20 +104,12 @@ def main() -> None:
         rep_snippets_txt = seed_dir / "report_snippets.txt"
         com_snippets_txt = seed_dir / "comment_snippets.txt"
 
-        titles = [
-            line.strip()
-            for line in titles_txt.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        titles = [line.strip() for line in titles_txt.read_text(encoding="utf-8").splitlines() if line.strip()]
         rep_snippets = [
-            line.rstrip()
-            for line in rep_snippets_txt.read_text(encoding="utf-8").splitlines()
-            if line.strip()
+            line.rstrip() for line in rep_snippets_txt.read_text(encoding="utf-8").splitlines() if line.strip()
         ]
         com_snippets = [
-            line.strip()
-            for line in com_snippets_txt.read_text(encoding="utf-8").splitlines()
-            if line.strip()
+            line.strip() for line in com_snippets_txt.read_text(encoding="utf-8").splitlines() if line.strip()
         ]
         placeholder_images = load_seed_images(seed_dir)
 

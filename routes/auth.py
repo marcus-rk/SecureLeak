@@ -8,19 +8,20 @@ from flask import (
     url_for,
 )
 from flask.typing import ResponseReturnValue
+
 from repository import users_repo
+from security.audit import log_security_event
 from security.auth_utils import (
     build_hasher,
+    is_common_password,
     maybe_upgrade_hash,
     normalize_and_validate_email,
-    verify_password,
-    validate_password,
     normalize_email,
-    is_common_password,
+    validate_password,
+    verify_password,
 )
 from security.decorators import login_required
 from security.limiter import limiter
-from security.audit import log_security_event
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -31,6 +32,7 @@ _hasher = build_hasher()
 @auth_bp.route("/login", methods=["GET"])
 def login() -> ResponseReturnValue:
     return render_template("login.html"), 200
+
 
 # POST: Login Authentication
 @auth_bp.route("/login", methods=["POST"])
@@ -62,6 +64,7 @@ def login_post() -> ResponseReturnValue:
 def register() -> ResponseReturnValue:
     return render_template("register.html"), 200
 
+
 # POST: Create account
 @auth_bp.route("/register", methods=["POST"])
 @limiter.limit("3 per hour")
@@ -82,7 +85,7 @@ def register_post() -> ResponseReturnValue:
 
     if is_common_password(password):
         return _register_bad_request("Password is too common.")
-    
+
     # Check for existing email or username to avoid duplicates
     if users_repo.get_user_by_email(email):
         return _register_conflict("Email already registered.")
@@ -92,6 +95,7 @@ def register_post() -> ResponseReturnValue:
     log_security_event("REGISTER_USER", user_id=uid, ip=request.remote_addr)
     flash("Account created. Please sign in.", "success")
     return redirect(url_for("auth.login"), 303)
+
 
 # POST: Logout
 @auth_bp.route("/logout", methods=["POST"])
@@ -104,6 +108,7 @@ def logout() -> ResponseReturnValue:
 
 
 # --- Micro-helpers (keep routes small and readable) ---
+
 
 def _render_with_flash(template: str, category: str, message: str, status: int) -> ResponseReturnValue:
     """Flash a message, then render the template with the given HTTP status."""
