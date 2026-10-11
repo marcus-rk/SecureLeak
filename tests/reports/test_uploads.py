@@ -7,16 +7,14 @@ from repository import reports_repo, users_repo
 from tests.helpers.web import BASE_URL, extract_csrf, register_user, login_user
 
 
-def _tiny_png() -> bytes:
+def _image_bytes(fmt: str) -> bytes:
     buf = io.BytesIO()
-    Image.new("RGB", (1, 1)).save(buf, format="PNG")
+    Image.new("RGB", (1, 1)).save(buf, fmt)
     return buf.getvalue()
 
 
 def _create_report_with_image(client, title: str, status: str, filename: str, content_type: str,
-                               image_bytes: bytes | None = None) -> None:
-    if image_bytes is None:
-        image_bytes = _tiny_png()
+                               image_bytes: bytes = _image_bytes("PNG")) -> None:
     # GET new report page for CSRF
     get_resp = client.get("/reports/new", base_url=BASE_URL)
     token = extract_csrf(get_resp.get_data(as_text=True))
@@ -80,7 +78,8 @@ def test_upload_public_and_private_access(app, client, tmp_path):
 
     # Create private report with image as owner
     login_user(client, "owner@example.com")
-    resp2 = _create_report_with_image(client, "Private B", "private", "b.jpg", "image/jpeg")
+    resp2 = _create_report_with_image(client, "Private B", "private", "b.jpg", "image/jpeg",
+                                         image_bytes=_image_bytes("JPEG"))
     assert resp2.status_code in (302, 303)
 
     with app.app_context():
