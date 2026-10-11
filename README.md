@@ -187,7 +187,7 @@ The project was built in phases to ensure security was integrated at every step,
    `SECRET_KEY` signs sessions and CSRF tokens. Outside debug mode the app refuses to start when it is missing or empty.
    Add it to a `.env` file in the project root (created if missing) with a strong random value:
    ```bash
-   echo "SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")" >> .env
+   printf '\nSECRET_KEY=%s\n' "$(python -c "import secrets; print(secrets.token_hex(32))")" >> .env
    ```
    *Note: In debug mode (`--debug`) the app falls back to an insecure development key if `SECRET_KEY` is not set. Never use debug mode outside local development.*
 
