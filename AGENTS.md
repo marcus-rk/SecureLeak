@@ -7,6 +7,14 @@ This file is the single source of instructions for any coding agent working in t
 1. Read [README.md](README.md) and the parts of `docs/` that touch the area you are working in.
 2. Understand the existing project before proposing changes: its purpose, structure, tests and the decisions it already made. Start from what the code does now.
 
+## Commands
+
+- Setup: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt "ruff==0.5.7"` (ruff is not in `requirements.txt`; CI pins 0.5.7).
+- Tests (full suite): `.venv/bin/python -m pytest -o addopts="" -q` (`pytest.ini` sets `addopts = -q`; overriding it shows the pass/fail summary).
+- Lint, check-only: `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`.
+- CI runs `ruff check . --fix` and `ruff format .`, which rewrite files. Do not use those locally to verify.
+- Run tests and lint before claiming a change works, and quote the output.
+
 ## Separate facts, suggestions and decisions
 
 When reporting or proposing, label each point:
