@@ -1,4 +1,3 @@
 -r requirements.txt
+-r requirements-ci.txt
 pytest==9.1.1
-# Keep ruff in sync with the pinned install in .github/workflows/ci.yml.
-ruff==0.5.7

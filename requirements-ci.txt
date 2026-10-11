@@ -1,0 +1,4 @@
+# CI lint and security tools, pinned in one place for CI and local dev.
+ruff==0.5.7
+bandit==1.7.8
+pip-audit==2.7.3
