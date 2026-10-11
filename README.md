@@ -3,13 +3,13 @@
 > *A minimal, educational bug tracker built to study and prevent web vulnerabilities.*
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.0.3-black?logo=flask)
+![Flask](https://img.shields.io/badge/Flask-3.1.3-black?logo=flask)
 ![SQLite](https://img.shields.io/badge/SQLite-3-07405E?logo=sqlite&logoColor=white)
-![Argon2](https://img.shields.io/badge/Argon2_cffi-23.1.0-7952B3)
-![FlaskWTF](https://img.shields.io/badge/Flask_WTF-1.2.1-green)
-![FlaskTalisman](https://img.shields.io/badge/Flask_Talisman-1.0.0-orange)
+![Argon2](https://img.shields.io/badge/Argon2_cffi-25.1.0-7952B3)
+![FlaskWTF](https://img.shields.io/badge/Flask_WTF-1.3.0-green)
+![FlaskTalisman](https://img.shields.io/badge/Flask_Talisman-1.1.0-orange)
 ![FlaskLimiter](https://img.shields.io/badge/Flask_Limiter-3.8.0-red)
-![Pillow](https://img.shields.io/badge/Pillow-10.3.0-yellow)
+![Pillow](https://img.shields.io/badge/Pillow-12.3.0-yellow)
 [![CI - Lint and Security](https://github.com/marcus-rk/SecureLeak/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/marcus-rk/SecureLeak/actions/workflows/ci.yml)
 
 ---
