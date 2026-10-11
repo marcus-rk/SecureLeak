@@ -7,6 +7,7 @@ from typing import List
 import sys
 
 from io import BytesIO
+from dotenv import load_dotenv
 from werkzeug.datastructures import FileStorage
 
 # Allow running this file directly (python seed/seed_runner.py)
@@ -19,7 +20,7 @@ from app import create_app  # noqa: E402
 from database.connection import close_db  # noqa: E402
 from database.initialize import apply as init_db  # noqa: E402
 from repository import users_repo, reports_repo, comments_repo  # noqa: E402
-from security.auth_utils import build_hasher  # noqa: E402
+from security.auth_utils import build_hasher, is_common_password, validate_password  # noqa: E402
 from security.uploads import store_report_image, uploads_base_dir  # noqa: E402
 
 
@@ -55,7 +56,31 @@ def load_seed_images(seed_dir: Path) -> List[Path]:
     return filtered or all_pngs
 
 
+def read_seed_password() -> str:
+    """Return SEED_PASSWORD, or exit if it is missing or fails the registration rules."""
+    password = os.environ.get("SEED_PASSWORD")
+    if not password:
+        print(
+            "[seed] SEED_PASSWORD is not set. Set it in the environment or in .env "
+            "to the password all seeded accounts should use.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    # Same rules as registration. Never echo the value.
+    if not validate_password(password) or is_common_password(password):
+        print(
+            "[seed] SEED_PASSWORD is too short or too common. Use at least 10 characters "
+            "that are not on the common-password list.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return password
+
+
 def main() -> None:
+    # Check the seed password before anything is deleted, so a failed run destroys nothing.
+    load_dotenv()
+    seed_password = read_seed_password()
     app = create_app()
     with app.app_context():
         db_path = Path(app.config["DATABASE"]).resolve()
@@ -109,7 +134,7 @@ def main() -> None:
                 name = (row["name"] or "user").strip()
                 role = (row["role"] or "user").strip().lower()
                 username = slugify_username(name, taken_usernames)
-                pwd_hash = hasher.hash("password123")
+                pwd_hash = hasher.hash(seed_password)
                 uid = users_repo.create_user(email=email, password_hash=pwd_hash, username=username, role=role)
                 user_ids.append(uid)
 

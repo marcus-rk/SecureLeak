@@ -193,11 +193,16 @@ The project was built in phases to ensure security was integrated at every step,
 
 3. **Initialize Database**
    The database is automatically initialized on the first run.
-   Optionally, you can seed it with demo data (the seed runner does not use debug mode, so it needs `SECRET_KEY` from step 2):
+   Optionally, you can seed it with demo data (the seed runner does not use debug mode, so it needs `SECRET_KEY` from step 2).
+   All seeded accounts, including the admins, share one password that you choose. There is no default. Add a line to `.env`, replacing the placeholder with your own password:
+   ```
+   SEED_PASSWORD=<your-seed-password>
+   ```
+   Then run:
    ```bash
    python -m seed.seed_runner
    ```
-   *Note: Seeded users have password `password123`.*
+   *Note: The seed runner refuses to run, and deletes nothing, if `SEED_PASSWORD` is missing or fails the registration rules (at least 10 characters, not on the common-password list).*
 
 4. **Run the Application**
    ```bash

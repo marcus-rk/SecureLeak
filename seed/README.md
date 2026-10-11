@@ -1,7 +1,7 @@
 
 # Seed Pack — Hacker‑Style (KISS)
 
-Goal: compact, realistic seed data for a public‑facing security research site. Tone is informal, concise, and community‑oriented. Every seeded account uses the password: `password123`.
+Goal: compact, realistic seed data for a public‑facing security research site. Tone is informal, concise, and community‑oriented. Every seeded account uses the password you set in `SEED_PASSWORD`.
 
 ## Folder layout
 
@@ -29,7 +29,7 @@ CSV header expected by the seeder: `email,name,role`
 - `email`: any fake address (we use `@mail.com`)
 - `name`: display name; username is auto‑slugified from this
 - `role`: `admin` or `user`
-- Password for every account is literally `password123` (hashed during seeding)
+- Password for every account comes from `SEED_PASSWORD` (hashed during seeding)
 
 Note: older docs sometimes show `email,username,display_name,role`. In this project the seeder reads `email,name,role` and generates the username from `name`.
 
@@ -71,7 +71,7 @@ That’s it — fast, deterministic, and ready to demo.
 
 ## What it creates
 
-- Users: 12-18 total (2 admins: admin1@mail.com, admin2@mail.com; everyone uses password `password123`)
+- Users: 12-18 total (2 admins: admin1@mail.com, admin2@mail.com; everyone uses the `SEED_PASSWORD` password)
 - Reports: 35–55 across all users
   - status distribution: ~55% public, ~35% private, ~10% closed
   - severity distribution: ~25% low, ~45% medium, ~30% high
