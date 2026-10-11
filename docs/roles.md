@@ -8,8 +8,8 @@ This document details the Role-Based Access Control (RBAC) system and the Admin 
 
 The application supports two roles:
 
-1.  **User**: Standard user. Can create reports and view public reports.
-2.  **Admin**: Superuser. Can view all reports and change their status.
+1.  **User**: Standard user. Can create reports, view public reports and their own private reports, and comment on reports they can view.
+2.  **Admin**: Superuser. Can view and comment on all reports and change their status.
 
 **Storage**:
 *   **Database**: `users.role` column.
