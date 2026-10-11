@@ -15,12 +15,15 @@
       "Bash(git branch -a)",
       "Bash(git branch -r)",
       "Bash(git branch -v)",
-      "Bash(git branch -vv)"
+      "Bash(git branch -vv)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)"
     ],
     "deny": [
       "Read(.env)",
       "Read(.env.*)",
-      "Read(*.pem)"
+      "Read(*.pem)",
+      "Read(instance/**)"
     ]
   }
 }
