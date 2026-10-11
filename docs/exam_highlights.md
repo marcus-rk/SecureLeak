@@ -191,9 +191,9 @@ def is_common_password(password: str) -> bool:
 
 ### 🛡️ Dependency Management
 **Concept**: Ensuring third-party libraries are known and secure.
-**Implementation**: `requirements.txt`
+**Implementation**: `requirements.txt`, `requirements-dev.txt`, `.github/workflows/ci.yml`
 **Reflection for Report**:
-> "We pin dependencies to specific versions in `requirements.txt` (all except `cryptography`, which uses a `>=41` lower bound). Pinning prevents 'supply chain attacks' where a future update might introduce a vulnerability. We can audit these specific versions against CVE databases."
+> "We pin every direct dependency to an exact version: runtime packages in `requirements.txt`, test and lint tools in `requirements-dev.txt`, and CI actions to full commit SHAs. Pinning prevents 'supply chain attacks' where a future update might introduce a vulnerability. We can audit these specific versions against CVE databases."
 
 ---
 
@@ -238,7 +238,7 @@ def login_post(): ...
 *   **pip-audit**: Checks installed dependencies against known CVE databases.
 *   **Ruff**: Enforces code quality and linting standards.
 **Reflection for Report**:
-> "Security isn't a one-time check. We implemented a **DevSecOps** pipeline that runs **Bandit** (SAST) and **pip-audit** (SCA) on every push and pull request that changes Python files or `requirements.txt`. This helps ensure that no known vulnerabilities or insecure coding patterns (like `eval()`) are merged into the main branch. The pytest job in CI runs the full test suite."
+> "Security isn't a one-time check. We implemented a **DevSecOps** pipeline that runs **Bandit** (SAST) and **pip-audit** (SCA) on every push and pull request that changes Python files, `requirements.txt` or `requirements-dev.txt`. This helps ensure that no known vulnerabilities or insecure coding patterns (like `eval()`) are merged into the main branch. The pytest job in CI runs the full test suite."
 
 ### 🛡️ Security Unit Tests (`tests/security/`)
 **Concept**: Verifying that security controls actually work.

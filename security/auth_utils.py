@@ -1,9 +1,11 @@
-from typing import Callable, Mapping, Optional, Set
 from pathlib import Path
+from typing import Callable, Mapping, Optional, Set
+
 from argon2 import PasswordHasher
 from email_validator import EmailNotValidError, validate_email
 
 _COMMON_PASSWORDS: Optional[Set[str]] = None
+
 
 def is_common_password(password: str) -> bool:
     """Check if the password is in the common passwords list."""
@@ -20,6 +22,7 @@ def build_hasher() -> PasswordHasher:
         hash_len=32,
         salt_len=16,
     )
+
 
 def normalize_email(s: str) -> str:
     return (s or "").strip().lower()
@@ -86,5 +89,3 @@ def _load_common_passwords() -> Set[str]:
             # Fail safe: if file is missing, return empty set (or log warning)
             _COMMON_PASSWORDS = set()
     return _COMMON_PASSWORDS
-
-

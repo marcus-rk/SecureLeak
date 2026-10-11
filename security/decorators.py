@@ -7,8 +7,11 @@ Provides:
 """
 
 from functools import wraps
+
 from flask import abort, flash, redirect, session, url_for
+
 from repository.users_repo import get_user_by_id
+
 
 # Decorator to require user login for a view.
 def login_required(view):
@@ -20,6 +23,7 @@ def login_required(view):
         return view(*args, **kwargs)
 
     return wrapped
+
 
 # Decorator to require a specific user role for a view.
 def require_role(role: str):
@@ -55,5 +59,7 @@ def require_role(role: str):
                     abort(404)
 
             return view(*args, **kwargs)
+
         return wrapped
+
     return decorator

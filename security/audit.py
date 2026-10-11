@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -24,9 +23,7 @@ def _configure_logger():
 
     _handler = logging.FileHandler(log_path)
     # Format: [TIMESTAMP] [IP] User:ID Action:ACTION Target:ID
-    formatter = logging.Formatter(
-        "[%(asctime)s] [%(ip)s] User:%(user_id)s Action:%(action)s Target:%(target_id)s"
-    )
+    formatter = logging.Formatter("[%(asctime)s] [%(ip)s] User:%(user_id)s Action:%(action)s Target:%(target_id)s")
     _handler.setFormatter(formatter)
     _audit_logger.addHandler(_handler)
 

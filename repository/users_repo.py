@@ -37,10 +37,14 @@ def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
 
 def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     """Return a user row by username (case-insensitive) or None."""
-    row = get_db().execute(
-        "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
-        (username,),
-    ).fetchone()
+    row = (
+        get_db()
+        .execute(
+            "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
+            (username,),
+        )
+        .fetchone()
+    )
     return dict(row) if row else None
 
 

@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import Optional
 
 from flask import current_app
+from PIL import Image
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
-from PIL import Image
 
 ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".gif"}
 MAX_UPLOAD_BYTES = 2 * 1024 * 1024  # 2 MiB
-MAX_IMAGE_DIMENSION = 2048 # Max width/height in pixels for uploaded images
+MAX_IMAGE_DIMENSION = 2048  # Max width/height in pixels for uploaded images
 
 
 def uploads_base_dir() -> str:
