@@ -66,6 +66,7 @@ jobs:
             python:
               - '**/*.py'
               - '.ruff.toml'
+              - 'requirements-ci.txt'
               - '.github/workflows/**'
             security:
               - 'requirements*.txt'
@@ -82,7 +83,8 @@ jobs:
   python-lint:
     name: Python • Ruff
     needs: changes
-    # Run only when Python files, Ruff config or the workflow changed
+    # Run only when Python files, Ruff config, the Ruff pin or the workflow
+    # changed
     if: needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -98,12 +100,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+          cache-dependency-path: requirements-ci.txt
           
-      # Pin versions for reproducibility and stable annotations.
-      # Tip: update periodically to pick up new rules/perf.
-      # Keep this version in sync with ruff in requirements-dev.txt.
+      # Versions are pinned in requirements-ci.txt for reproducibility and
+      # stable annotations. Dependabot opens PRs to update them.
       - name: Install Ruff (pinned)
-        run: pip install "ruff==0.5.7"
+        run: pip install -r requirements-ci.txt
 
       # Ruff never rewrites files in CI. These are the same check-only
       # commands listed in AGENTS.md, so a local pass means a CI pass.
@@ -144,10 +146,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+          cache-dependency-path: requirements-ci.txt
 
       - name: Install security tools (pinned)
-        run: pip install "bandit==1.7.8" "pip-audit==2.7.3"
-        # Pin for consistent findings and faster cold starts.
+        run: pip install -r requirements-ci.txt
+        # Pinned in requirements-ci.txt for consistent findings and faster
+        # cold starts.
 
       - name: Bandit (SAST)
         id: bandit
@@ -193,11 +197,10 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+          cache-dependency-path: requirements*.txt
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+        run: pip install -r requirements-dev.txt
 
       - name: Run pytest (full suite)
         id: pytest
