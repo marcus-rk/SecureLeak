@@ -10,6 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# app.py builds an app at import time and refuses to start without SECRET_KEY
+# outside debug mode, so set a test key before importing it.
+os.environ.setdefault("SECRET_KEY", "test-secret-key")
+
 from app import create_app  # noqa: E402
 from database.initialize import apply as apply_migration  # noqa: E402
 
@@ -20,7 +24,6 @@ def app(tmp_path):
 
     Uses a temporary SQLite database per test run to keep tests isolated and simple.
     """
-    os.environ.setdefault("SECRET_KEY", "test-secret-key")
     app = create_app()
     # Use a temp DB path and initialize schema
     db_path = tmp_path / "test.sqlite"

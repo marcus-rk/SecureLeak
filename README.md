@@ -183,15 +183,23 @@ The project was built in phases to ensure security was integrated at every step,
    pip install --upgrade pip
    ```
 
-2. **Initialize Database**
+2. **Set SECRET_KEY**
+   `SECRET_KEY` signs sessions and CSRF tokens. Outside debug mode the app refuses to start when it is missing or empty.
+   Add it to a `.env` file in the project root (created if missing) with a strong random value:
+   ```bash
+   echo "SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")" >> .env
+   ```
+   *Note: In debug mode (`--debug`) the app falls back to an insecure development key if `SECRET_KEY` is not set. Never use debug mode outside local development.*
+
+3. **Initialize Database**
    The database is automatically initialized on the first run.
-   Optionally, you can seed it with demo data:
+   Optionally, you can seed it with demo data (the seed runner does not use debug mode, so it needs `SECRET_KEY` from step 2):
    ```bash
    python -m seed.seed_runner
    ```
    *Note: Seeded users have password `password123`.*
 
-3. **Run the Application**
+4. **Run the Application**
    ```bash
    flask --app app run --debug
    ```

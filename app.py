@@ -25,9 +25,20 @@ def create_app() -> Flask:
     # 3. SESSION_COOKIE_SAMESITE: 'Lax' restricts cookies on cross-site requests (CSRF protection).
     # 4. SESSION_COOKIE_SECURE: Sends cookies only over HTTPS (active when debug=False).
     # 5. MAX_CONTENT_LENGTH: Limits request body to 3MB to prevent DoS attacks.
-    
+
+    # Fail closed: outside debug mode, refuse to start without a real SECRET_KEY.
+    # An empty value counts as missing. Debug mode keeps the insecure dev key.
+    secret_key = os.environ.get("SECRET_KEY")
+    if not secret_key:
+        if not app.debug:
+            raise RuntimeError(
+                "SECRET_KEY is not set. Set it in the environment or in .env, for example "
+                'with a value from: python -c "import secrets; print(secrets.token_hex(32))"'
+            )
+        secret_key = "dev-insecure-key"
+
     app.config.from_mapping(
-        SECRET_KEY=os.environ.get("SECRET_KEY", "dev-insecure-key"),
+        SECRET_KEY=secret_key,
         DATABASE=os.environ.get("DATABASE", str(Path(app.instance_path) / "secureleak.sqlite")),
         UPLOADS_DIR=os.environ.get("UPLOADS_DIR", "uploads"),
         SESSION_COOKIE_HTTPONLY=True,
