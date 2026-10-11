@@ -1,13 +1,22 @@
 import io
 
 import pytest
+from PIL import Image
 
 from repository import reports_repo, users_repo
 from tests.helpers.web import BASE_URL, extract_csrf, register_user, login_user
 
 
+def _tiny_png() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (1, 1)).save(buf, format="PNG")
+    return buf.getvalue()
+
+
 def _create_report_with_image(client, title: str, status: str, filename: str, content_type: str,
-                               image_bytes: bytes = b"\x89PNG\r\n\x1a\n") -> None:
+                               image_bytes: bytes | None = None) -> None:
+    if image_bytes is None:
+        image_bytes = _tiny_png()
     # GET new report page for CSRF
     get_resp = client.get("/reports/new", base_url=BASE_URL)
     token = extract_csrf(get_resp.get_data(as_text=True))
