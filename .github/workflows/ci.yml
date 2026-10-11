@@ -71,18 +71,22 @@ jobs:
         if: ${{ steps.filter_python.outputs.changed == 'true' }}
         run: pip install "ruff==0.5.7"
 
-      # Auto-fix imports/format; final verify emits GitHub annotations
-      - name: Ruff (auto-fix, then verify)
+      # Check-only: lint emits GitHub annotations, format fails on drift
+      - name: Ruff (lint and format check)
         id: ruff
         continue-on-error: true
         if: ${{ steps.filter_python.outputs.changed == 'true' }}
         run: |
-          ruff check . --fix
-          ruff format .
-          ruff check . --output-format=github
-        # Ruff runs twice:
-        #  1) ruff check --fix and ruff format to apply safe auto-fixes.
-        #  2) ruff check (no --fix) to produce GitHub annotations.
+          rc=0
+          ruff check . --output-format=github || rc=1
+          ruff format --check . || rc=1
+          exit "$rc"
+        # Ruff never rewrites files in CI. These are the same check-only
+        # commands listed in AGENTS.md, so a local pass means a CI pass:
+        #  1) ruff check (no --fix) reports lint errors as GitHub annotations.
+        #  2) ruff format --check fails if any file is not formatted.
+        # Both commands always run (rc collects failures), so one push shows
+        # lint errors and formatting drift together.
         # continue-on-error keeps the job alive so we can write a clean summary
         # and fail at the end based on the step outcome.
 
@@ -210,7 +214,7 @@ jobs:
         # We fail the job if either Bandit or pip-audit found issues serious
         # enough to set a failure. The summary always shows both results.
 
-  tests-repository:
+  tests:
     name: Tests • Pytest
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -218,28 +222,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Run only when code, templates or test config changed
-      - name: Filter paths (Repo tests)
-        id: filter_repo
+      # Run only when code, templates, static files or test config changed
+      - name: Filter paths (Tests)
+        id: filter_tests
         uses: dorny/paths-filter@v3
         with:
           filters: |
             changed:
               - '**/*.py'
               - 'templates/**'
+              - 'static/**'
               - 'pytest.ini'
               - 'requirements.txt'
               - '.github/workflows/ci.yml'
 
       - name: Set up Python 3.11 (pip cache)
-        if: ${{ steps.filter_repo.outputs.changed == 'true' }}
+        if: ${{ steps.filter_tests.outputs.changed == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
       - name: Install dependencies
-        if: ${{ steps.filter_repo.outputs.changed == 'true' }}
+        if: ${{ steps.filter_tests.outputs.changed == 'true' }}
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -247,7 +252,7 @@ jobs:
       - name: Run pytest (full suite)
         id: pytest
         continue-on-error: true
-        if: ${{ steps.filter_repo.outputs.changed == 'true' }}
+        if: ${{ steps.filter_tests.outputs.changed == 'true' }}
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
@@ -256,7 +261,7 @@ jobs:
       - name: Summary (Tests • Pytest)
         run: |
           echo "## Tests • Pytest" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.filter_repo.outputs.changed }}" != "true" ]; then
+          if [ "${{ steps.filter_tests.outputs.changed }}" != "true" ]; then
             echo "- Skipped (no test-relevant changes)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           s="${{ steps.pytest.outcome }}"
           echo "- pytest: $s" >> "$GITHUB_STEP_SUMMARY"
