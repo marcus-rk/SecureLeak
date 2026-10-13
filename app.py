@@ -25,6 +25,7 @@ def create_app() -> Flask:
     # 3. SESSION_COOKIE_SAMESITE: 'Lax' restricts cookies on cross-site requests (CSRF protection).
     # 4. SESSION_COOKIE_SECURE: Sends cookies only over HTTPS (active when debug=False).
     # 5. MAX_CONTENT_LENGTH: Limits request body to 3MB to prevent DoS attacks.
+    # 6. PERMANENT_SESSION_LIFETIME: 30-minute idle timeout, applied at login.
 
     # Fail closed: outside debug mode, refuse to start without a real SECRET_KEY.
     # An empty value counts as missing. Debug mode keeps the insecure dev key.

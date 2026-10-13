@@ -138,5 +138,7 @@ def _register_conflict(msg: str) -> ResponseReturnValue:
 
 def _establish_session(user: dict) -> None:
     session.clear()
+    # Apply PERMANENT_SESSION_LIFETIME as an idle timeout (cookie re-issued on each request).
+    session.permanent = True
     session["user_id"] = user["id"]
     session["role"] = (user.get("role") or "user").lower()

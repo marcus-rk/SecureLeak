@@ -27,7 +27,7 @@ sequenceDiagram
 We chose **session cookies** over JWTs (JSON Web Tokens) because:
 1.  **Simplicity**: No need to manage token storage or expiration manually on the client.
 2.  **Security**: Cookies can be made `HttpOnly` (XSS-proof), whereas JWTs in `localStorage` are vulnerable to XSS.
-3.  **Expiry**: Sessions are Flask client-side signed cookies with a 30 minute lifetime (`PERMANENT_SESSION_LIFETIME` in `app.py`). Logout clears the session in the browser, but there is no server-side revocation list, so a copied cookie stays valid until it expires.
+3.  **Expiry**: Sessions are Flask client-side signed cookies with a 30-minute idle timeout (`PERMANENT_SESSION_LIFETIME` in `app.py`, applied at login in `_establish_session`). Each request re-issues the cookie with a fresh expiry, so a user is signed out after 30 minutes without activity. The browser drops the cookie when its `Expires` passes, and the server independently rejects a cookie signed more than 30 minutes ago. Logout clears the session in the browser, but there is no server-side revocation list, so a copied cookie stays valid until it is 30 minutes old, and its holder can keep refreshing it by making requests.
 
 ### Password Hashing (Argon2id)
 
