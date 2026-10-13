@@ -19,6 +19,6 @@ One function decides whether a report is viewable for the report page, comment a
 
 - A closed report is not viewable by a non-admin owner only as a side effect of default deny (`security/reports_access.py:19-24`). This was not decided. That owner's list still includes their closed reports (`repository/reports_repo.py:40`), so opening one gives 404. Treat this as undecided, not as intended.
 - The admin override reads the role from the session (`routes/reports.py:104`), not the database. Whether it should was not decided (see [ADR 0005](0005-admin-role-not-self-assignable.md)).
-- No unit test of `is_report_viewable` exists. Partial enforcement: `tests/reports/test_uploads.py::test_upload_public_and_private_access` (non-owner on a private image gets 404).
+- No unit test of `is_report_viewable` exists. Partial enforcement: `tests/reports/test_uploads.py::test_upload_public_and_private_access` (non-owner on a private image gets 404) and `tests/security/test_permissions.py` (non-owner on a private report page and comment gets 404).
 
 If reversed: inlining the check per route, or adding a status without updating the policy, lets the routes drift. Do not make a new status viewable by default, and do not change closed-report behaviour until the maintainer decides it. Only partly enforced by a test (see above).
