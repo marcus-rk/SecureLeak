@@ -4,6 +4,6 @@ Flask-Talisman==1.1.0
 python-dotenv==1.2.4
 argon2-cffi==25.1.0
 email-validator==2.3.0
-Flask-Limiter==3.8.0
+Flask-Limiter==4.1.1
 Pillow==12.3.0
 cryptography==50.0.2
