@@ -33,7 +33,7 @@ The one field that says both who can see a report and whether it is still open: 
 _Avoid_: Visibility (as a field name), state
 
 **Public report**:
-A report with status `public`; viewable by every signed-in account (`security/reports_access.py:19-20`, `routes/reports.py:96,112,137`).
+A report with status `public`; viewable by every signed-in account (`security/reports_access.py:19-20`, `routes/reports.py:97,113,138`).
 
 **Private report**:
 A report with status `private`; viewable only by its owner and admins (`security/reports_access.py:21-22`).
@@ -43,7 +43,7 @@ A report with status `closed`; viewable by admins (`security/reports_access.py:1
 _Avoid_: Resolved, archived
 
 **Severity**:
-How serious the reported vulnerability is: `low`, `medium` or `high` (`routes/reports.py:60`).
+How serious the reported vulnerability is: `low`, `medium` or `high` (`routes/reports.py:61`).
 _Avoid_: Priority, criticality
 
 **Viewable**:
@@ -57,7 +57,7 @@ _Avoid_: Access check, permission check
 ### Report content
 
 **Comment**:
-A text an account adds to a report it can view (`database/migrations/init.sql:26-34`, `routes/reports.py:120-124`).
+A text an account adds to a report it can view (`database/migrations/init.sql:26-34`, `routes/reports.py:121-125`).
 _Avoid_: Reply, note, message
 
 **Image**:
@@ -66,13 +66,13 @@ _Avoid_: Attachment, upload, file, PoC, screenshot
 
 ## Invariants
 
-1. A public report is viewable by any signed-in account, a private report only by its owner and admins, a closed report by admins. Any other status is not viewable by a non-admin (`security/reports_access.py:15-24`). Whether a non-admin owner may view their own closed report is not decided ([ADR 0002](docs/adr/0002-single-visibility-policy.md)). Test: `tests/reports/test_uploads.py::test_upload_public_and_private_access` covers the image route for public and private reports only; `tests/security/test_permissions.py` covers a non-owner on a private report page and comment. Closed reports and admins viewing private reports are not enforced by a test.
-2. For a signed-in account, access that is denied answers 404, never 403; a signed-out request is redirected to sign in (`security/decorators.py:20-22` for report routes, `:42-44` for admin routes) (`routes/reports.py:106,122,147`, `security/decorators.py:49,59`). Tests: `tests/reports/test_uploads.py::test_upload_public_and_private_access` (image route), `tests/security/test_permissions.py` (non-owner on a private report page and comment, regular user on the admin dashboard and status-change POST, demoted admin on the admin dashboard only, signed-out redirect). See [ADR 0001](docs/adr/0001-404-instead-of-403.md).
+1. A public report is viewable by any signed-in account, a private report only by its owner and admins, a closed report by admins. Any other status is not viewable by a non-admin (`security/reports_access.py:15-24`). Whether a non-admin owner may view their own closed report is not decided ([ADR 0002](docs/adr/0002-single-visibility-policy.md)). Test: `tests/reports/test_uploads.py::test_upload_public_and_private_access` covers the image route for public and private reports only; `tests/security/test_permissions.py` covers a non-owner on a private report page and comment, and the demoted-admin case on the report page, comment and image. Closed reports and a current admin viewing another user's private report are not enforced by a test.
+2. For a signed-in account, access that is denied answers 404, never 403; a signed-out request is redirected to sign in (`security/decorators.py:20-22` for report routes, `:42-44` for admin routes) (`routes/reports.py:107,123,148`, `security/decorators.py:49,59`). Tests: `tests/reports/test_uploads.py::test_upload_public_and_private_access` (image route), `tests/security/test_permissions.py` (non-owner on a private report page and comment, regular user on the admin dashboard and status-change POST, demoted admin on the admin dashboard and on the report page, comment and image, signed-out redirect). See [ADR 0001](docs/adr/0001-404-instead-of-403.md).
 3. Only an admin changes a report's status, and only to `public`, `private` or `closed` (`routes/admin.py:18-21`). Partly enforced by a test: `tests/security/test_permissions.py::test_regular_user_gets_404_on_admin_dashboard_and_status_change` shows a regular user's status-change POST is refused and the status is unchanged. The allowed status values are not enforced by a test.
-4. A report created through the website starts as `public` or `private`, never `closed` (`routes/reports.py:64`). Seed data can create `closed` reports directly (`seed/seed_runner.py:135-147`). Not enforced by a test.
+4. A report created through the website starts as `public` or `private`, never `closed` (`routes/reports.py:65`). Seed data can create `closed` reports directly (`seed/seed_runner.py:135-147`). Not enforced by a test.
 5. Registration always creates the role `user`; admins come only from seed data (`routes/auth.py:76-77`, `seed/seed_runner.py:125`). Not enforced by a test. See [ADR 0005](docs/adr/0005-admin-role-not-self-assignable.md).
-6. Every request to an admin route that passes the session role check re-reads the role from the database (`security/decorators.py:51-59`). Test: `tests/security/test_permissions.py::test_demoted_admin_gets_404_on_admin_dashboard_despite_admin_session` covers the admin dashboard only; the status-change route is not exercised with a stale admin session.
-7. A comment needs a viewable report and 1 to 2000 characters (`routes/reports.py:120-126`). Partly enforced by a test: `tests/security/test_permissions.py::test_non_owner_comment_on_private_report_gets_404_and_stores_nothing` covers the viewable-report requirement; the 1 to 2000 character bounds are not enforced by a test.
-8. An image is served only if the report is viewable and the requested name equals the stored name (`routes/reports.py:146-150`). Test: `tests/reports/test_uploads.py::test_upload_public_and_private_access` covers viewability only; the name check is not enforced by a test.
-9. An image is accepted only with an allowed extension, is re-encoded before it is stored, and is stored under `UPLOADS_DIR`, which defaults to `uploads/`, outside `static/` (`routes/reports.py:68-73`, `security/uploads.py:12,50-67`, `app.py:43`). The extension and MIME checks live in the route, not in `store_report_image`. Test: `tests/reports/test_uploads.py::test_upload_disallowed_extension_returns_400` rejects a `.txt` file sent as `text/plain`, which the MIME check alone would also reject; the extension allowlist, re-encode and storage location are not enforced by a test on their own. See [ADR 0003](docs/adr/0003-image-re-encoding-and-private-storage.md).
+6. Every request to an admin route that passes the session role check re-reads the role from the database (`security/decorators.py:51-59`). Test: `tests/security/test_permissions.py::test_demoted_admin_gets_404_on_admin_dashboard_despite_admin_session` covers the admin dashboard only; the status-change route is not exercised with a stale admin session. The report page, comment and image routes also use the database role for the admin override (`routes/reports.py:166`), so a demoted admin loses it on the next request. Test: `tests/security/test_permissions.py::test_demoted_admin_gets_404_on_private_report_page_comment_and_image`.
+7. A comment needs a viewable report and 1 to 2000 characters (`routes/reports.py:121-127`). Partly enforced by a test: `tests/security/test_permissions.py::test_non_owner_comment_on_private_report_gets_404_and_stores_nothing` covers the viewable-report requirement; the 1 to 2000 character bounds are not enforced by a test.
+8. An image is served only if the report is viewable and the requested name equals the stored name (`routes/reports.py:147-151`). Test: `tests/reports/test_uploads.py::test_upload_public_and_private_access` covers viewability only; the name check is not enforced by a test.
+9. An image is accepted only with an allowed extension, is re-encoded before it is stored, and is stored under `UPLOADS_DIR`, which defaults to `uploads/`, outside `static/` (`routes/reports.py:69-74`, `security/uploads.py:12,50-67`, `app.py:43`). The extension and MIME checks live in the route, not in `store_report_image`. Test: `tests/reports/test_uploads.py::test_upload_disallowed_extension_returns_400` rejects a `.txt` file sent as `text/plain`, which the MIME check alone would also reject; the extension allowlist, re-encode and storage location are not enforced by a test on their own. See [ADR 0003](docs/adr/0003-image-re-encoding-and-private-storage.md).
 10. Outside debug mode the app does not start without a `SECRET_KEY` (`app.py:29-41`). Test: `tests/security/test_secret_key.py`.

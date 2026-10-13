@@ -13,7 +13,7 @@ The application supports two roles:
 
 **Storage**:
 *   **Database**: `users.role` column.
-*   **Session**: `session['role']` (cached for performance, verified for critical actions).
+*   **Session**: `session['role']` (cached for performance and used for display such as the admin nav link; admin routes and the report page, comment and image routes read the role from the database instead).
 
 ---
 
