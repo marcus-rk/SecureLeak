@@ -89,6 +89,8 @@ def register_post() -> ResponseReturnValue:
     # Check for existing email or username to avoid duplicates
     if users_repo.get_user_by_email(email):
         return _register_conflict("Email already registered.")
+    if users_repo.get_user_by_username(username):
+        return _register_conflict("Username already taken.")
 
     pwd_hash = _hasher.hash(password)
     uid = users_repo.create_user(email=email, password_hash=pwd_hash, username=username or email, role=role)
@@ -132,7 +134,7 @@ def _register_bad_request(msg: str) -> ResponseReturnValue:
 
 
 def _register_conflict(msg: str) -> ResponseReturnValue:
-    """409 when the email is already registered."""
+    """409 when the email or username is already taken."""
     return _render_with_flash("register.html", "error", msg, 409)
 
 
