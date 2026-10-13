@@ -120,7 +120,7 @@ Registration always creates a `user`; admins come only from seed data ([ADR 0005
    ```bash
    git clone https://github.com/marcus-rk/SecureLeak.git
    cd SecureLeak
-   python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt  # runtime + pytest and ruff; requirements.txt alone is runtime-only
+   python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt  # runtime + pytest + CI tools (ruff, bandit, pip-audit); requirements.txt alone is runtime-only
    ```
 
 2. **Set SECRET_KEY**
@@ -202,9 +202,9 @@ The [CI workflow](.github/workflows/ci.yml) runs on pushes to `main` and on pull
 
 | CI job | Local command |
 |:-------|:--------------|
-| Python: Ruff lint and format check | `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .` |
-| Security: Bandit (SAST) and pip-audit (known vulnerable dependencies) | `.venv/bin/bandit -q -r . --severity-level medium --confidence-level medium -x venv,.venv,instance,__pycache__` and `.venv/bin/pip-audit -r requirements.txt -r requirements-dev.txt` |
-| Tests: full pytest suite | `.venv/bin/python -m pytest -o addopts="" -q` |
+| Python • Ruff | `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .` |
+| Security • Bandit & pip-audit | `.venv/bin/bandit -q -r . --severity-level medium --confidence-level medium -x venv,.venv,instance,__pycache__` and `.venv/bin/pip-audit -r requirements.txt -r requirements-dev.txt` |
+| Tests • Pytest | `.venv/bin/python -m pytest -o addopts="" -q` |
 
 Dependency versions are pinned in `requirements.txt`, `requirements-dev.txt` and `requirements-ci.txt`.
 
