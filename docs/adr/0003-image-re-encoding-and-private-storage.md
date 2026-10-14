@@ -3,7 +3,7 @@
 Status: accepted
 Recorded: 2026-10. Decided: 2025-11-03 (66b3e03) for random names and private storage, 2025-12-04 (9301c6f) for re-encoding
 
-An image gets a random name (`security/uploads.py:47`) and is stored per report under `uploads/<report_id>/`, outside `static/` (`security/uploads.py:50-52`, `docs/reports.md:76`). It is served only through the image route, which applies the visibility policy (`routes/reports.py:135-153`). The re-encode by Pillow (`security/uploads.py:56-67`) came in 9301c6f (2025-12-04) and the 2048px dimension cap (`security/uploads.py:14`) in 4dd3214 (2025-12-10).
+An image gets a random name (`security/uploads.py:47`) and is stored per report under `uploads/<report_id>/`, outside `static/` (`security/uploads.py:50-52`, `docs/reports.md:76`). It is served only through the image route, which applies the visibility policy (`routes/reports.py:136-154`). The re-encode by Pillow (`security/uploads.py:56-67`) came in 9301c6f (2025-12-04) and the 2048px dimension cap (`security/uploads.py:14`) in 4dd3214 (2025-12-10).
 
 ## Why
 
@@ -20,7 +20,7 @@ An image gets a random name (`security/uploads.py:47`) and is stored per report 
 ## Consequences
 
 - `tests/reports/test_uploads.py::test_upload_disallowed_extension_returns_400` rejects a `.txt` file sent as `text/plain`, so it passes on either the extension or the MIME check; the extension allowlist alone is not enforced by a test.
-- The visibility policy on the image route is partly enforced by `tests/reports/test_uploads.py::test_upload_public_and_private_access` (public and private reports only; closed reports and admins are not enforced by a test).
+- The visibility policy on the image route is partly enforced by `tests/reports/test_uploads.py::test_upload_public_and_private_access` (public and private reports only) and by `tests/security/test_permissions.py::test_demoted_admin_gets_404_on_private_report_page_comment_and_image` (demoted admin); closed reports and a current admin are not enforced by a test.
 - The re-encode, the dimension cap and the random name are not enforced by a test.
 
 If reversed: serving from `static/` bypasses the visibility policy ([ADR 0002](./0002-single-visibility-policy.md)) for private reports; keeping client-supplied filenames reopens traversal and collisions; dropping the re-encode keeps EXIF and payloads. Do not "optimise" by skipping the re-encode or moving images under `static/`.

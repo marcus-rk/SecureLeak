@@ -269,7 +269,7 @@ if required == "admin":
         abort(404)
 ```
 **Reflection for Report**:
-> "For standard users, we trust the session role for performance. But for **Admins**, we implement a 'paranoid' check: we fetch the user's role from the database on *every* request. This ensures that if an admin's privileges are revoked, they lose access immediately, even if their session is still active."
+> "For standard users, we trust the session role for performance. But for **Admins**, we implement a 'paranoid' check: we fetch the user's role from the database on *every* admin request and on every report page, comment and image request. This ensures that if an admin's privileges are revoked, they lose access immediately, even if their session is still active."
 
 ---
 

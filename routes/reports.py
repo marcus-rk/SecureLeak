@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from flask import (
     Blueprint,
@@ -13,7 +14,7 @@ from flask import (
 )
 from flask.typing import ResponseReturnValue
 
-from repository import comments_repo, reports_repo
+from repository import comments_repo, reports_repo, users_repo
 from security.audit import log_security_event
 from security.decorators import login_required
 from security.limiter import limiter
@@ -101,7 +102,7 @@ def view_report(report_id: int) -> ResponseReturnValue:
 
     # Authorization: private reports visible only to owner; return 404 to avoid info leakage
     uid = session.get("user_id")
-    role = session.get("role")
+    role = _current_role()
     if not is_report_viewable(report, uid, role):
         abort(404)
     comments = comments_repo.list_comments_for_report(report_id)
@@ -116,7 +117,7 @@ def add_comment(report_id: int) -> ResponseReturnValue:
     if not report:
         abort(404)
     uid = session.get("user_id")
-    role = session.get("role")
+    role = _current_role()
     if not is_report_viewable(report, uid, role):
         # Preserve info-hiding policy
         abort(404)
@@ -142,7 +143,7 @@ def report_file(report_id: int, name: str) -> ResponseReturnValue:
         abort(404)
     # Visibility: same rule as detail
     uid = session.get("user_id")
-    role = session.get("role")
+    role = _current_role()
     if not is_report_viewable(report, uid, role):
         abort(404)
     # Path safety: only serve the exact stored image_name
@@ -159,3 +160,9 @@ def report_file(report_id: int, name: str) -> ResponseReturnValue:
 def _report_bad_request(msg: str) -> ResponseReturnValue:
     flash(msg, "error")
     return render_template("report_new.html"), 400
+
+
+# Admin override must follow the database role, so a demoted admin loses it on the next request (like admin routes)
+def _current_role() -> Optional[str]:
+    user = users_repo.get_user_by_id(int(session["user_id"]))
+    return (user or {}).get("role")
