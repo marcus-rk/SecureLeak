@@ -34,7 +34,7 @@ Never present a suggestion as if it were decided.
 
 ## Git workflow
 
-- Start from the latest `origin/main` (`git pull --ff-only`).
+- Start from the latest `origin/main`. Fetch and verify it; preserve existing branches and dirty work by using an isolated worktree when a checkout is already in use.
 - Work on a branch, never directly on `main`. Open pull requests as drafts; mark them ready only when the owner asks.
 - Commit and push only when the owner asks.
 - Use the GitHub account `marcus-rk`. The commit name and email (GitHub noreply address) are set in the local Git config; do not change it or the global config.
@@ -44,11 +44,11 @@ Never present a suggestion as if it were decided.
 
 ### Issue tracker
 
-GitHub Issues in `marcus-rk/SecureLeak`, via `gh`. See `docs/agents/issue-tracker.md`.
+Before creating, claiming, implementing, reviewing or updating an issue, PR or Project item, read `docs/agents/issue-tracker.md` for the canonical lifecycle and authorization gates. Use `gh` for `marcus-rk/SecureLeak`.
 
 ### Triage labels
 
-Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+Before triage or label changes, read `docs/agents/triage-labels.md` for the label vocabulary and its relationship to Project status.
 
 ### Domain docs
 
