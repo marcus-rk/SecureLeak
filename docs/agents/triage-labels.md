@@ -1,19 +1,15 @@
-# Triage Labels
+# Triage labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repository's issue tracker.
+Use these repository labels when a skill refers to the corresponding role:
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
-| -------------------------- | -------------------- | ---------------------------------------- |
-| `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
-| `needs-info`               | `needs-info`         | Waiting on reporter for more information |
-| `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
-| `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
-| `wontfix`                  | `wontfix`            | Will not be actioned                     |
+| Role and label | Meaning |
+| --- | --- |
+| `needs-triage` | A maintainer still needs to evaluate scope or suitability. Remove when that evaluation is demonstrably complete. |
+| `needs-info` | More information is required. |
+| `ready-for-agent` | Specification is sufficiently clear and suitable for an agent. |
+| `ready-for-human` | Implementation requires human work. |
+| `wontfix` | The owner decided this work will not be actioned. |
 
-When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
+Each issue also has one type label: `bug`, `enhancement` or `documentation`. Inspect `gh label list` before use; creating labels requires owner agreement.
 
-Triage labels track an issue's workflow state. Every issue also gets one type label for its kind: `bug`, `enhancement` or `documentation`.
-
-These labels may not exist yet in this repository. Check with `gh label list` and ask the owner before creating any.
-
-Edit the right-hand column to match whatever vocabulary you actually use.
+Labels express triage and suitability, not the Project lifecycle. A fully specified `ready-for-agent` issue can remain Backlog while blocked. This label grants no implementation permission, supersedes no dependency and releases no execution claim. Follow `issue-tracker.md` for Status, authorization, claims and reconciliation after scope or outcome changes.
